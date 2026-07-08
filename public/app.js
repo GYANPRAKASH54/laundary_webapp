@@ -582,7 +582,7 @@ async function handleAdminLoginSubmit(e) {
         }
     } else {
         if (phone === 'admin' && password === 'ADMIN123') {
-            applyLoginState({ name: "Demo Admin", phone: "admin", email: "admin@luxeclean.com", role: "admin" });
+            applyLoginState({ name: "Admin Manager", phone: "admin", email: "admin@luxeclean.com", role: "admin" });
             showToast("Admin authenticated successfully (Simulated memory mode)", "success");
             switchTab('admin');
         } else {
