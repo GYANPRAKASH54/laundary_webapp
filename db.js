@@ -67,6 +67,9 @@ function translateSqlAndParams(sql, params) {
     // Map auto-increment logic
     pgSql = pgSql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, "SERIAL PRIMARY KEY");
 
+    // Translate SQLite ORDER BY rowid DESC to Postgres compatible sorting
+    pgSql = pgSql.replace(/ORDER BY rowid DESC/gi, "ORDER BY date DESC, order_id DESC");
+
     // For INSERT queries on PostgreSQL, append "RETURNING id" if it doesn't already have RETURNING
     if (pgSql.trim().toLowerCase().startsWith("insert into")) {
         if (!pgSql.toLowerCase().includes("returning")) {
@@ -178,55 +181,77 @@ const initDb = async () => {
     if (isPostgres) {
         try {
             await dbRun(`
+                CREATE TABLE IF NOT EXISTS services (
+                    service_code VARCHAR(50) PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    price REAL NOT NULL,
+                    unit VARCHAR(20) NOT NULL,
+                    category VARCHAR(50) NOT NULL,
+                    description TEXT
+                )
+            `);
+
+            await dbRun(`
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    phone TEXT UNIQUE NOT NULL,
-                    email TEXT NOT NULL,
-                    password TEXT NOT NULL,
-                    role TEXT DEFAULT 'customer'
+                    name VARCHAR(100) NOT NULL,
+                    phone VARCHAR(20) UNIQUE NOT NULL,
+                    email VARCHAR(100) NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    role VARCHAR(20) DEFAULT 'customer'
                 )
             `);
 
             await dbRun(`
                 CREATE TABLE IF NOT EXISTS addresses (
                     id SERIAL PRIMARY KEY,
-                    user_phone TEXT NOT NULL,
-                    type TEXT NOT NULL,
+                    user_phone VARCHAR(20) NOT NULL REFERENCES users(phone) ON UPDATE CASCADE ON DELETE CASCADE,
+                    type VARCHAR(20) NOT NULL,
                     address_line TEXT NOT NULL
                 )
             `);
 
             await dbRun(`
+                CREATE TABLE IF NOT EXISTS valets (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    phone VARCHAR(20) UNIQUE NOT NULL,
+                    vehicle_num VARCHAR(20),
+                    status VARCHAR(20) DEFAULT 'active'
+                )
+            `);
+
+            await dbRun(`
                 CREATE TABLE IF NOT EXISTS orders (
-                    order_id TEXT PRIMARY KEY,
-                    customer_name TEXT NOT NULL,
-                    customer_phone TEXT NOT NULL,
-                    customer_email TEXT NOT NULL,
-                    date TEXT NOT NULL,
-                    slot TEXT NOT NULL,
+                    order_id VARCHAR(50) PRIMARY KEY,
+                    customer_name VARCHAR(100) NOT NULL,
+                    customer_phone VARCHAR(20) NOT NULL REFERENCES users(phone) ON UPDATE CASCADE ON DELETE CASCADE,
+                    customer_email VARCHAR(100) NOT NULL,
+                    date DATE NOT NULL,
+                    slot VARCHAR(50) NOT NULL,
                     address TEXT NOT NULL,
-                    address_type TEXT NOT NULL,
-                    payment TEXT NOT NULL,
-                    weight REAL NOT NULL,
-                    items_count INTEGER NOT NULL,
-                    amount REAL NOT NULL,
-                    status TEXT NOT NULL,
-                    timestamp TEXT NOT NULL,
+                    address_type VARCHAR(20) NOT NULL,
+                    payment VARCHAR(20) NOT NULL,
+                    weight REAL NOT NULL DEFAULT 0.0,
+                    items_count INTEGER NOT NULL DEFAULT 0,
+                    amount REAL NOT NULL DEFAULT 0.0,
+                    status VARCHAR(50) NOT NULL,
+                    timestamp VARCHAR(50) NOT NULL,
                     latitude REAL DEFAULT 0.0,
-                    longitude REAL DEFAULT 0.0
+                    longitude REAL DEFAULT 0.0,
+                    valet_id INTEGER REFERENCES valets(id) ON DELETE SET NULL
                 )
             `);
 
             await dbRun(`
                 CREATE TABLE IF NOT EXISTS order_items (
                     id SERIAL PRIMARY KEY,
-                    order_id TEXT NOT NULL,
-                    name TEXT NOT NULL,
-                    qty INTEGER NOT NULL,
-                    weight REAL NOT NULL,
-                    service_code TEXT NOT NULL,
-                    service_label TEXT NOT NULL,
+                    order_id VARCHAR(50) NOT NULL REFERENCES orders(order_id) ON UPDATE CASCADE ON DELETE CASCADE,
+                    name VARCHAR(100) NOT NULL,
+                    qty INTEGER NOT NULL DEFAULT 1,
+                    weight REAL NOT NULL DEFAULT 0.0,
+                    service_code VARCHAR(50) REFERENCES services(service_code) ON UPDATE CASCADE,
+                    service_label VARCHAR(100) NOT NULL,
                     unit_price REAL NOT NULL,
                     total_price REAL NOT NULL
                 )
@@ -235,11 +260,30 @@ const initDb = async () => {
             await dbRun(`
                 CREATE TABLE IF NOT EXISTS email_logs (
                     id SERIAL PRIMARY KEY,
-                    order_id TEXT NOT NULL,
-                    recipient TEXT NOT NULL,
-                    subject TEXT NOT NULL,
+                    order_id VARCHAR(50) NOT NULL,
+                    recipient VARCHAR(100) NOT NULL,
+                    subject VARCHAR(200) NOT NULL,
                     body TEXT NOT NULL,
-                    timestamp TEXT NOT NULL
+                    timestamp VARCHAR(50) NOT NULL
+                )
+            `);
+
+            await dbRun(`
+                CREATE TABLE IF NOT EXISTS whatsapp_logs (
+                    id SERIAL PRIMARY KEY,
+                    order_id VARCHAR(50) NOT NULL,
+                    recipient_phone VARCHAR(20) NOT NULL,
+                    template_name VARCHAR(50) NOT NULL,
+                    status VARCHAR(20) DEFAULT 'delivered',
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            await dbRun(`
+                CREATE TABLE IF NOT EXISTS admin_settings (
+                    key VARCHAR(50) PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    description TEXT
                 )
             `);
 

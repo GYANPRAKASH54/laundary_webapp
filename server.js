@@ -205,6 +205,51 @@ app.get('/api/orders', async (req, res) => {
     }
 });
 
+// 5.6 ADMIN: GET ALL REGISTERED USERS
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await dbAll('SELECT name, phone, email, role FROM users ORDER BY name ASC');
+        res.json(users);
+    } catch (err) {
+        console.error('Fetch users error:', err.message);
+        res.status(500).json({ error: 'Database error fetching users' });
+    }
+});
+
+// 5.7 ADMIN: GET ALL VALETS
+app.get('/api/admin/valets', async (req, res) => {
+    try {
+        const valets = await dbAll('SELECT * FROM valets ORDER BY id ASC');
+        res.json(valets);
+    } catch (err) {
+        console.error('Fetch valets error:', err.message);
+        res.status(500).json({ error: 'Database error fetching valets' });
+    }
+});
+
+// 5.8 ADMIN: CREATE NEW STAFF VALET
+app.post('/api/admin/valets', async (req, res) => {
+    const { name, phone, vehicle_num, password } = req.body;
+    if (!name || !phone || !password) {
+        return res.status(400).json({ error: 'Name, Phone, and Password are required' });
+    }
+    try {
+        await dbRun(
+            'INSERT INTO valets (name, phone, vehicle_num, status) VALUES (?, ?, ?, ?)',
+            [name, phone, vehicle_num || '', 'active']
+        );
+        // Also register in users table with role 'valet' so they can log in
+        await dbRun(
+            'INSERT INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, ?)',
+            [name, phone, `${phone.replace(/\s+/g, '')}@luxeclean.com`, password, 'valet']
+        );
+        res.status(201).json({ success: true });
+    } catch (err) {
+        console.error('Create valet error:', err.message);
+        res.status(500).json({ error: 'Database error creating valet (phone might already exist)' });
+    }
+});
+
 // 5.5 ORDERS: GET SINGLE ORDER BY ID (Public lookup for landing page tracking)
 app.get('/api/orders/:orderId', async (req, res) => {
     const { orderId } = req.params;
@@ -250,6 +295,29 @@ app.get('/api/orders/:orderId', async (req, res) => {
     } catch (err) {
         console.error('Fetch order by ID error:', err.message);
         res.status(500).json({ error: 'Database error fetching order' });
+    }
+});
+
+// 5.9 ORDERS: GET NEXT SEQUENTIAL ORDER ID
+app.get('/api/orders/next-id', async (req, res) => {
+    try {
+        const rows = await dbAll("SELECT order_id FROM orders WHERE order_id LIKE 'LX-%'");
+        let maxSeq = 0;
+        rows.forEach(r => {
+            const part = r.order_id.substring(3); // Remove 'LX-'
+            const num = parseInt(part, 10);
+            if (!isNaN(num) && num > maxSeq) {
+                maxSeq = num;
+            }
+        });
+        const nextNum = maxSeq + 1;
+        const padded = String(nextNum).padStart(3, '0');
+        res.json({ orderId: `LX-${padded}` });
+    } catch (err) {
+        console.error("Error generating next sequential order ID:", err.message);
+        // Fallback to safe random value
+        const orderNum = Math.floor(10000 + Math.random() * 90000);
+        res.json({ orderId: `LX-${orderNum}` });
     }
 });
 

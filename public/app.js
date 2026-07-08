@@ -115,6 +115,11 @@ window.addEventListener('DOMContentLoaded', async () => {
             await syncAppData();
             if (currentUser && currentUser.role === 'admin') {
                 await syncEmailLogs();
+                if (typeof activeAdminSubTab !== 'undefined' && activeAdminSubTab === 'valets') {
+                    await syncValetsData();
+                } else {
+                    await syncCustomersData();
+                }
             }
         }
     }, 4000);
@@ -183,8 +188,9 @@ function switchTab(tabName) {
             title.innerText = "Customer Dashboard";
             subtitle.innerText = currentUser ? `Welcome back, ${currentUser.name}. Manage your bookings.` : "Sign in to place orders.";
         } else if (targetPanel === 'admin') {
-            title.innerText = "Admin Operations Center";
-            subtitle.innerText = "Track operational statuses, dispatch drivers, and view financials.";
+            const isValet = currentUser && currentUser.role === 'valet';
+            title.innerText = isValet ? "Valet Logistical Console" : "Admin Operations Center";
+            subtitle.innerText = isValet ? "Scan customer tickets, update laundry stages, and weigh bookings." : "Track operational statuses, dispatch drivers, and view financials.";
         }
     }
 
@@ -260,10 +266,24 @@ async function syncAppData() {
 
         renderAdminOrdersTable();
         updateAdminStats();
+        if (currentUser && currentUser.role === 'admin') {
+            if (typeof activeAdminSubTab !== 'undefined' && activeAdminSubTab === 'valets') {
+                await syncValetsData();
+            } else {
+                await syncCustomersData();
+            }
+        }
     } catch (e) {
         console.warn("Sync failed. Server might have gone offline.", e.message);
         renderAdminOrdersTable();
         updateAdminStats();
+        if (currentUser && currentUser.role === 'admin') {
+            if (typeof activeAdminSubTab !== 'undefined' && activeAdminSubTab === 'valets') {
+                renderAdminValetsTable([]);
+            } else {
+                renderAdminCustomersTable([]);
+            }
+        }
     }
 }
 
@@ -588,7 +608,7 @@ function applyLoginState(user) {
     document.getElementById('nav-btn-gate').style.display = 'none';
     document.getElementById('nav-logout-btn').style.display = 'flex';
 
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'valet') {
         document.getElementById('nav-customer-menu').style.display = 'none';
         document.getElementById('nav-admin-menu').style.display = 'flex';
         syncEmailLogs();
@@ -604,6 +624,28 @@ function applyLoginState(user) {
     if (authCard) authCard.style.display = 'none';
     if (dashCard) dashCard.style.display = 'block';
 
+    // Differentiate admin/valet views
+    const revenueCard = document.getElementById('revenueChart') ? document.getElementById('revenueChart').closest('.lg\\:col-span-5') : null;
+    const seedBtn = document.querySelector('button[onclick="seedSampleOrders()"]');
+    const customersTab = document.getElementById('admin-subtab-btn-customers');
+    const valetsTab = document.getElementById('admin-subtab-btn-valets');
+
+    if (user.role === 'valet') {
+        if (revenueCard) revenueCard.style.display = 'none';
+        if (seedBtn) seedBtn.style.display = 'none';
+        if (customersTab) customersTab.style.display = 'none';
+        setTimeout(() => {
+            if (valetsTab) switchAdminSubTab('valets');
+        }, 100);
+    } else {
+        if (revenueCard) revenueCard.style.display = 'block';
+        if (seedBtn) seedBtn.style.display = 'inline-flex';
+        if (customersTab) customersTab.style.display = 'inline-block';
+        setTimeout(() => {
+            if (customersTab) switchAdminSubTab('customers');
+        }, 100);
+    }
+
     // Refresh data
     syncAppData();
     updateGuestFieldsVisibility();
@@ -611,7 +653,7 @@ function applyLoginState(user) {
     playBeep(880, 0.15, 0);
 
     // Redirect to respective dashboard
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'valet') {
         switchTab('admin');
     } else {
         switchTab('customer');
@@ -845,9 +887,36 @@ async function handleNewBooking(e) {
         itemsCount += item.qty;
     });
 
-    const orderNum = Math.floor(10000 + Math.random() * 90000);
+    let orderId = `LX-${Math.floor(10000 + Math.random() * 90000)}`;
+    if (!useLocalFallback) {
+        try {
+            const nextRes = await fetch(`${API_BASE}/orders/next-id`);
+            if (nextRes.ok) {
+                const nextData = await nextRes.json();
+                if (nextData.orderId) {
+                    orderId = nextData.orderId;
+                }
+            }
+        } catch (e) {
+            console.warn("Could not fetch sequential ID from server:", e);
+        }
+    } else {
+        let maxSeq = 0;
+        orders.forEach(o => {
+            if (o.orderId && o.orderId.startsWith('LX-')) {
+                const part = o.orderId.substring(3);
+                const num = parseInt(part, 10);
+                if (!isNaN(num) && num > maxSeq) {
+                    maxSeq = num;
+                }
+            }
+        });
+        const nextNum = maxSeq + 1;
+        orderId = `LX-${String(nextNum).padStart(3, '0')}`;
+    }
+
     const newOrder = {
-        orderId: `LX-${orderNum}`,
+        orderId: orderId,
         customerName: customerName,
         customerPhone: customerPhone,
         customerEmail: customerEmail,
@@ -2758,3 +2827,216 @@ function togglePasswordVisibility(inputId, btnEl) {
 }
 window.togglePasswordVisibility = togglePasswordVisibility;
 
+async function syncCustomersData() {
+    if (useLocalFallback) {
+        renderAdminCustomersTable([]);
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/users`);
+        if (!res.ok) throw new Error("Users fetch failed");
+        const users = await res.json();
+        
+        if (Array.isArray(users)) {
+            renderAdminCustomersTable(users);
+        }
+    } catch (e) {
+        console.warn("Sync customers failed:", e.message);
+    }
+}
+window.syncCustomersData = syncCustomersData;
+
+function renderAdminCustomersTable(usersList) {
+    const tbody = document.getElementById('admin-customers-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    let list = usersList;
+    if (list.length === 0) {
+        const seen = new Set();
+        const extracted = [];
+        orders.forEach(o => {
+            if (!seen.has(o.customerPhone)) {
+                seen.add(o.customerPhone);
+                extracted.push({
+                    name: o.customerName,
+                    phone: o.customerPhone,
+                    email: o.customerEmail,
+                    role: 'customer'
+                });
+            }
+        });
+        list = extracted;
+    }
+
+    if (list.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" class="text-center text-gray-400 p-4">
+                    No customers found in database.
+                </td>
+            </tr>`;
+        return;
+    }
+
+    list.forEach(cust => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-100 hover:bg-gray-50/50 transition-colors';
+        tr.innerHTML = `
+            <td class="px-4 py-3 align-middle font-bold text-primary">${cust.name}</td>
+            <td class="px-4 py-3 align-middle">
+                <div class="flex flex-col text-[11px] text-gray-500 font-sans">
+                    <span class="font-medium text-gray-700">${cust.phone}</span>
+                    <span>${cust.email}</span>
+                </div>
+            </td>
+            <td class="px-4 py-3 align-middle">
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${cust.role === 'admin' ? 'bg-secondary/15 text-secondary' : 'bg-primary/10 text-primary'} uppercase">
+                    ${cust.role}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+window.renderAdminCustomersTable = renderAdminCustomersTable;
+
+// ADMIN SUBTAB SWITCHER (Customers / Valets)
+let activeAdminSubTab = 'customers';
+function switchAdminSubTab(tab) {
+    activeAdminSubTab = tab;
+    
+    // Toggle buttons class
+    const btnCust = document.getElementById('admin-subtab-btn-customers');
+    const btnVal = document.getElementById('admin-subtab-btn-valets');
+    
+    if (btnCust && btnVal) {
+        btnCust.classList.toggle('bg-white', tab === 'customers');
+        btnCust.classList.toggle('text-primary', tab === 'customers');
+        btnCust.classList.toggle('shadow-sm', tab === 'customers');
+        btnCust.classList.toggle('text-gray-500', tab !== 'customers');
+        
+        btnVal.classList.toggle('bg-white', tab === 'valets');
+        btnVal.classList.toggle('text-primary', tab === 'valets');
+        btnVal.classList.toggle('shadow-sm', tab === 'valets');
+        btnVal.classList.toggle('text-gray-500', tab !== 'valets');
+    }
+    
+    // Toggle subpanels display
+    const panelCust = document.getElementById('admin-subpanel-customers');
+    const panelVal = document.getElementById('admin-subpanel-valets');
+    
+    if (panelCust && panelVal) {
+        panelCust.classList.toggle('hidden', tab !== 'customers');
+        panelCust.classList.toggle('active', tab === 'customers');
+        
+        panelVal.classList.toggle('hidden', tab !== 'valets');
+        panelVal.classList.toggle('active', tab === 'valets');
+    }
+
+    if (tab === 'valets') {
+        syncValetsData();
+    } else {
+        syncCustomersData();
+    }
+}
+window.switchAdminSubTab = switchAdminSubTab;
+
+async function syncValetsData() {
+    if (useLocalFallback) {
+        renderAdminValetsTable([]);
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/valets`);
+        if (!res.ok) throw new Error();
+        const valets = await res.json();
+        if (Array.isArray(valets)) {
+            renderAdminValetsTable(valets);
+        }
+    } catch (e) {
+        console.warn("Sync valets failed:", e.message);
+        renderAdminValetsTable([]);
+    }
+}
+window.syncValetsData = syncValetsData;
+
+function renderAdminValetsTable(valetsList) {
+    const tbody = document.getElementById('admin-valets-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    let list = valetsList;
+    if (list.length === 0) {
+        // Mock offline valets
+        list = [
+            { id: 1, name: "Rahul Valet", phone: "+91 99000 11111", vehicle_num: "DL-3C-5555", status: "active" },
+            { id: 2, name: "Amit Valet", phone: "+91 99000 22222", vehicle_num: "DL-3C-6666", status: "active" }
+        ];
+    }
+
+    list.forEach(valet => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-100 hover:bg-gray-50/50 transition-colors';
+        tr.innerHTML = `
+            <td class="px-4 py-2 align-middle font-bold text-secondary">V-${valet.id}</td>
+            <td class="px-4 py-2 align-middle font-bold text-primary">${valet.name}</td>
+            <td class="px-4 py-2 align-middle font-medium text-gray-700">${valet.phone}</td>
+            <td class="px-4 py-2 align-middle font-semibold text-gray-500">${valet.vehicle_num || 'No Vehicle'}</td>
+            <td class="px-4 py-2 align-middle">
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-100 text-green-700 uppercase">
+                    ${valet.status}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+window.renderAdminValetsTable = renderAdminValetsTable;
+
+async function handleAddValetSubmit(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('new-valet-name').value.trim();
+    const phone = document.getElementById('new-valet-phone').value.trim();
+    const vehicle = document.getElementById('new-valet-vehicle').value.trim();
+    const password = document.getElementById('new-valet-password').value;
+
+    if (!name || !phone || !password) return;
+
+    if (!useLocalFallback) {
+        try {
+            const res = await fetch(`${API_BASE}/admin/valets`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, phone, vehicle_num: vehicle, password })
+            });
+            if (res.ok) {
+                showToast(`Valet staff ${name} registered successfully!`, "success");
+            } else {
+                const data = await res.json();
+                throw new Error(data.error);
+            }
+        } catch (err) {
+            console.error("Add valet error:", err);
+            showToast(err.message || "Failed to register valet.", "danger");
+            return;
+        }
+    } else {
+        showToast(`Valet staff ${name} registered (Simulated offline memory)!`, "success");
+    }
+
+    // Reset inputs
+    document.getElementById('new-valet-name').value = '';
+    document.getElementById('new-valet-phone').value = '';
+    document.getElementById('new-valet-vehicle').value = '';
+    document.getElementById('new-valet-password').value = '';
+
+    await syncValetsData();
+    playBeep(880, 0.15, 0);
+}
+window.handleAddValetSubmit = handleAddValetSubmit;
