@@ -486,10 +486,16 @@ async function handleSignInSubmit(e) {
         }
     } else {
         if (phone === 'admin') {
-            showToast("Offline mode: Administrator access requires active SQLite backend.", "danger");
-            alert("Offline mode: Administrator access requires active SQLite backend.");
+            alert("To log in as administrator, please use the STAFF login tab.");
         } else {
-            applyLoginState({ name: "Offline Customer", phone, email: "offline@luxeclean.com", role: "customer" });
+            const seedCusts = {
+                "+91 98230 45678": "Amit Patel",
+                "+91 88390 12345": "Priya Nair",
+                "+91 77382 99221": "Vikram Singh",
+                "+91 99999 88888": "Rahul Sharma"
+            };
+            const custName = seedCusts[phone] || "Offline Customer";
+            applyLoginState({ name: custName, phone, email: "offline@luxeclean.com", role: "customer" });
             showToast("Signed in successfully (Simulated memory mode)", "success");
         }
     }
@@ -522,7 +528,8 @@ async function handleSignUpSubmit(e) {
             showToast("Server error connecting to database.", "danger");
         }
     } else {
-        showToast("Registration requires active SQLite backend server.", "danger");
+        applyLoginState({ name, phone, email, role: "customer" });
+        showToast(`Registration complete (Simulated memory mode). Welcome, ${name}!`, 'success');
     }
 }
 
@@ -554,8 +561,13 @@ async function handleAdminLoginSubmit(e) {
             alert("Server error connecting to database.");
         }
     } else {
-        showToast("Staff access requires SQLite database connection.", "danger");
-        alert("Staff access requires SQLite database connection.");
+        if (phone === 'admin' && password === 'ADMIN123') {
+            applyLoginState({ name: "Demo Admin", phone: "admin", email: "admin@luxeclean.com", role: "admin" });
+            showToast("Admin authenticated successfully (Simulated memory mode)", "success");
+            switchTab('admin');
+        } else {
+            alert("Incorrect admin credentials in simulated mode. Use phone: admin and password: ADMIN123.");
+        }
     }
 }
 
