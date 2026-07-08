@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxeClean | Premium Smart Laundry System</title>
+    <!-- Google Fonts: Outfit for headings, Inter for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Material Symbols for Stitch parity -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    
+    <!-- Leaflet.js Mapping Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Chart.js for Admin Analytics charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        try {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#001726',
+                            secondary: '#7b5800',
+                            background: '#f8f9ff',
+                            'surface-container': '#e5eeff',
+                            'surface-container-low': '#eff4ff',
+                            'status-completed': '#10b981',
+                            'status-pending': '#eab308',
+                            'status-progress': '#3b82f6',
+                            'on-surface-variant': '#42474d',
+                        },
+                        fontFamily: {
+                            sans: ['Inter', 'sans-serif'],
+                            heading: ['Outfit', 'sans-serif'],
+                        }
+                    }
+                }
+            }
+        } catch(e) {}
+    </script>
+    <!-- Main Style Sheet (custom overrides, modal, toasts, map wrapper) -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .nav-btn.active {
+            font-weight: 700;
+            border-bottom: 2px solid #7b5800;
+            color: #001726 !important;
+        }
+        .tab-panel {
+            display: none !important;
+        }
+        .tab-panel.active {
+            display: block !important;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 23, 38, 0.08);
+        }
+        .asymmetric-bg {
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+        }
+        #auth-tab-signin.active, #auth-tab-signup.active, #auth-tab-admin.active {
+            background: #ffffff !important;
+            color: #001726 !important;
+            box-shadow: 0px 4px 12px rgba(0, 44, 69, 0.08);
+        }
+    </style>
+</head>
+
+<body class="bg-background font-sans text-primary min-h-screen flex flex-col">
+
+    <!-- Global TopNavBar Header -->
+    <header class="w-full top-0 sticky z-50 bg-white shadow-sm border-b border-gray-100">
+        <nav class="flex justify-between items-center px-6 md:px-12 py-4 max-w-7xl mx-auto">
+            <!-- Logo area -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('landing')">
+                <img src="components/screen_logo.png" alt="LuxeClean Logo" class="h-9 w-auto">
+                <span class="text-xl font-heading font-extrabold text-primary hidden md:block">LuxeClean</span>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center gap-8 nav-menu">
+                <a href="#services" onclick="switchTab('landing')" class="nav-btn py-1 font-body-md text-on-surface-variant hover:text-secondary transition-colors" data-tab="landing">Overview</a>
+                <a href="#landing-booking-container" onclick="switchTab('customer-book')" class="nav-btn py-1 font-body-md text-on-surface-variant hover:text-secondary transition-colors" data-tab="customer-book">Book Valet</a>
+                
+                <!-- Customer Sub menu (Toggled on customer login) -->
+                <div id="nav-customer-menu" style="display: none;" class="items-center gap-8">
+                    <a href="#" onclick="switchTab('customer')" class="nav-btn py-1 font-body-md text-on-surface-variant hover:text-secondary transition-colors" data-tab="customer">My Dashboard</a>
+                </div>
+
+                <!-- Admin Sub menu (Toggled on admin login) -->
+                <div id="nav-admin-menu" style="display: none;" class="items-center gap-8">
+                    <a href="#" onclick="switchTab('admin')" class="nav-btn py-1 font-body-md text-on-surface-variant hover:text-secondary transition-colors" data-tab="admin">Operations Control</a>
+                </div>
+            </div>
+
+            <!-- Login / Signup / Logout Area -->
+            <div class="flex items-center gap-4">
+                <!-- Guest controls -->
+                <div id="nav-btn-gate" class="flex items-center gap-2">
+                    <button onclick="showAuthMode('signin')" class="px-5 py-2 rounded-full font-body-md text-primary font-medium hover:bg-surface-container transition-all">Login</button>
+                    <button onclick="showAuthMode('signup')" class="px-5 py-2 rounded-full bg-primary text-white font-body-md font-bold hover:bg-primary-container transition-all">Sign Up</button>
+                </div>
+
+                <!-- Logged In profile controls -->
+                <div id="nav-logout-btn" style="display: none;" class="items-center gap-4">
+                    <div id="profile-indicator" onclick="currentUser.role === 'admin' ? switchTab('admin') : switchTab('customer')" class="flex items-center gap-3 bg-surface-container-low border border-primary/20 px-4 py-1.5 rounded-full cursor-pointer hover:bg-white transition-all">
+                        <div class="flex flex-col text-left">
+                            <span class="text-xs font-bold text-primary profile-name">Guest Mode</span>
+                            <span class="text-[9px] text-gray-500 profile-role uppercase">Viewer Mode</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-secondary/15 text-secondary flex items-center justify-center font-bold" id="profile-avatar-letter">G</div>
+                    </div>
+                    <button onclick="handleLogout()" class="px-5 py-1.5 rounded-full text-xs font-bold transition-all" style="color: #7b5800; border: 2px dashed #7b5800; background: transparent;">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Panels -->
+    <main class="flex-grow">
+
+        <!-- 1. LANDING PANEL -->
+        <section class="tab-panel active" id="panel-landing">
+            <!-- Hero banner card -->
+            <div class="relative bg-white border-b border-gray-100 overflow-hidden py-16 md:py-24">
+                <div class="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center gap-12">
+                    <div class="flex-1 space-y-6 text-center md:text-left z-10">
+                        <span class="inline-block px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-[11px] font-bold tracking-wider uppercase">Elite Fabric Care</span>
+                        <h1 class="text-4xl md:text-5xl font-heading font-extrabold text-primary leading-tight">Meticulous Cleaning for the Modern Wardrobe.</h1>
+                        <p class="text-base md:text-lg text-gray-600 max-w-xl">Experience the ultimate convenience with our premium dry cleaning and smart laundry service. Professional valet care delivered straight to your doorstep.</p>
+                        <div class="flex flex-col sm:flex-row gap-4 pt-2 justify-center md:justify-start">
+                            <button onclick="switchTab('customer-book')" class="px-8 py-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform">
+                                Book Pickup Now
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                            <a href="#landing-tracking-section" class="px-8 py-4 bg-gray-100 text-primary rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors">
+                                Track Live Order
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex-1 relative w-full h-[320px] md:h-[420px] rounded-3xl overflow-hidden glass-card p-4 shadow-2xl">
+                        <!-- Visual photography -->
+                        <img src="components/screen_photo.png" alt="LuxeClean Professional Service Interior" class="absolute inset-0 w-full h-full object-cover rounded-2xl">
+                        <div class="absolute bottom-6 right-6 bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-center gap-3">
+                            <div class="w-10 h-10 bg-status-completed/10 rounded-full flex items-center justify-center">
+                                <span class="material-symbols-outlined text-status-completed">check_circle</span>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Quality Guaranteed</p>
+                                <p class="font-bold text-primary">100% Satisfaction</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Services Showcase -->
+            <section class="py-16 max-w-7xl mx-auto px-6 md:px-12" id="services">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-heading font-extrabold text-primary mb-3">Our Premium Services</h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">From daily essentials to delicate couture, we provide specialized treatment for every fabric in your collection.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Service 1 -->
+                    <div onclick="quickSelectService('wash_fold_normal')" class="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:border-secondary transition-all cursor-pointer flex flex-col h-full">
+                        <img src="components/wash_fold.png" alt="Premium Wash & Fold" class="w-full h-48 object-cover border-b border-gray-100">
+                        <div class="p-6 flex-grow flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-primary mb-2">Premium Wash & Fold</h3>
+                                <p class="text-sm text-gray-500 mb-6">Laundering everyday items with premium detergents, softeners, and precise folding.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                                <span class="font-bold text-secondary text-base">₹35 - ₹60 / kg</span>
+                                <span class="text-primary font-bold text-sm flex items-center gap-1">Select <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Service 2 -->
+                    <div onclick="quickSelectService('dry_cleaning_basic')" class="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:border-secondary transition-all cursor-pointer flex flex-col h-full">
+                        <img src="components/dry_clean.png" alt="Eco-Friendly Dry Cleaning" class="w-full h-48 object-cover border-b border-gray-100">
+                        <div class="p-6 flex-grow flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-primary mb-2">Eco-Dry Cleaning</h3>
+                                <p class="text-sm text-gray-500 mb-6">Gentle, organic solvents that protect suits, silks, and formal wear without chemical odors.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                                <span class="font-bold text-secondary text-base">₹100 - ₹150 / pcs</span>
+                                <span class="text-primary font-bold text-sm flex items-center gap-1">Select <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Service 3 -->
+                    <div onclick="quickSelectService('shoe_cleaning_machine')" class="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:border-secondary transition-all cursor-pointer flex flex-col h-full">
+                        <img src="components/shoe_spa.png" alt="Premium Shoe Spa" class="w-full h-48 object-cover border-b border-gray-100">
+                        <div class="p-6 flex-grow flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-primary mb-2">Premium Shoe Spa</h3>
+                                <p class="text-sm text-gray-500 mb-6">Detailed sneaker wash, deep leather scrubbing, and luxury shoe restoration.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                                <span class="font-bold text-secondary text-base">₹70 - ₹150 / pair</span>
+                                <span class="text-primary font-bold text-sm flex items-center gap-1">Select <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Order Tracking Area -->
+            <section id="landing-tracking-section" class="py-12 bg-gray-50 border-t border-b border-gray-100">
+                <div class="max-w-7xl mx-auto px-6 md:px-12">
+                    <div class="max-w-xl mx-auto text-center mb-8">
+                        <h2 class="text-2xl font-heading font-extrabold text-primary mb-2">Track Your Order Status</h2>
+                        <p class="text-sm text-gray-500">Enter your order reference ID (e.g. LX-12345) to view real-time operations progress, digital tickets, and simulator tracking.</p>
+                    </div>
+                    <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-grow">
+                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                                <input type="text" id="landing-track-id" placeholder="Order Reference ID (e.g. LX-12345)" class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-primary focus:border-primary text-sm font-medium">
+                            </div>
+                            <button id="landing-track-btn" onclick="trackLandingOrder()" class="bg-primary hover:bg-primary-container text-white font-bold px-6 py-3 rounded-lg text-sm transition-colors">
+                                Find Order
+                            </button>
+                        </div>
+
+                        <!-- Results output container -->
+                        <div id="landing-track-result" style="display: none;" class="mt-8 pt-8 border-t border-gray-100">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Interactive Booking & Weight Calculator -->
+            <section id="landing-booking-container" class="py-16 max-w-7xl mx-auto px-6 md:px-12">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Left: Scheduling Details Form -->
+                    <div class="lg:col-span-8 bg-white p-8 rounded-2xl shadow-md border border-gray-100">
+                        <h3 class="text-xl font-heading font-extrabold text-primary mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary">calendar_today</span>
+                            Schedule Your Valet Pickup
+                        </h3>
+                        <form onsubmit="handleNewBooking(event)" class="space-y-6">
+                            <!-- Calculator Service Select -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Service Type</label>
+                                    <select id="laundry-service-select" onchange="onServiceSelectChange()" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2.5 px-4 font-body-md text-sm">
+                                        <optgroup label="Weight-Based Fabric Care (₹ / kg)">
+                                            <option value="wash_fold_normal">Wash & Fold (Normal) - ₹35/kg</option>
+                                            <option value="wash_fold_organic">Wash & Fold (Organic) - ₹45/kg</option>
+                                            <option value="wash_fold_organic_ezee">Wash & Fold (Organic Ezee) - ₹55/kg</option>
+                                            <option value="wash_fold_ezee">Wash & Fold (Ezee) - ₹45/kg</option>
+                                            <option value="wash_fold_whites">Wash & Fold (Whites) - ₹60/kg</option>
+                                            <option value="wash_iron_normal">Wash & Iron (Normal) - ₹45/kg</option>
+                                            <option value="wash_iron_organic">Wash & Iron (Organic) - ₹55/kg</option>
+                                            <option value="wash_iron_organic_ezee">Wash & Iron (Organic Ezee) - ₹65/kg</option>
+                                            <option value="wash_iron_ezee">Wash & Iron (Ezee) - ₹55/kg</option>
+                                            <option value="wash_iron_whites">Wash & Iron (Whites) - ₹70/kg</option>
+                                        </optgroup>
+                                        <optgroup label="Shoe Spa Treatments (₹ / pair)">
+                                            <option value="shoe_cleaning_machine">Shoe Cleaning (Machine) - ₹70/pair</option>
+                                            <option value="shoe_cleaning_hand_wash">Shoe Cleaning (Hand Wash) - ₹100/pair</option>
+                                            <option value="shoe_cleaning_deep_clean">Shoe Cleaning (Deep Clean) - ₹150/pair</option>
+                                        </optgroup>
+                                        <optgroup label="Specialty Custom Items (₹ / piece)">
+                                            <option value="bag_cleaning_machine">Bag Cleaning (Machine) - ₹70/pcs</option>
+                                            <option value="bag_cleaning_hand_wash">Bag Cleaning (Hand Wash) - ₹100/pcs</option>
+                                            <option value="bag_cleaning_deep_clean">Bag Cleaning (Deep Clean) - ₹150/pcs</option>
+                                            <option value="soft_toy_cleaning_machine">Soft Toy Cleaning (Machine) - ₹70/pcs</option>
+                                            <option value="soft_toy_cleaning_hand_wash">Soft Toy Cleaning (Hand Wash) - ₹100/pcs</option>
+                                            <option value="soft_toy_cleaning_deep_clean">Soft Toy Cleaning (Deep Clean) - ₹150/pcs</option>
+                                            <option value="stain_treatment_white">Stain Treatment (White Clothes) - ₹70/pcs</option>
+                                            <option value="stain_treatment_colored">Stain Treatment (Colored Clothes) - ₹100/pcs</option>
+                                            <option value="color_dye_basic">Color Dye (Basic) - ₹150/pcs</option>
+                                            <option value="color_dye_premium">Color Dye (Premium) - ₹250/pcs</option>
+                                            <option value="dry_cleaning_basic">Dry Cleaning (Basic) - ₹100/pcs</option>
+                                            <option value="dry_cleaning_premium">Dry Cleaning (Premium) - ₹150/pcs</option>
+                                            <option value="blanket_cleaning_single">Blanket Cleaning (Single) - ₹300/pcs</option>
+                                            <option value="blanket_cleaning_double">Blanket Cleaning (Double) - ₹450/pcs</option>
+                                            <option value="blanket_dry_cleaning_single">Blanket Dry Cleaning (Single) - ₹400/pcs</option>
+                                            <option value="blanket_dry_cleaning_double">Blanket Dry Cleaning (Double) - ₹600/pcs</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="space-y-2 flex flex-col justify-end">
+                                    <!-- Dynamic Qty Counter for Piece services -->
+                                    <div id="laundry-qty-container" style="display: none;">
+                                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Item Quantity</label>
+                                        <div class="flex items-center border border-gray-200 rounded-lg w-fit bg-white h-11 overflow-hidden">
+                                            <button type="button" onclick="adjustQty(-1)" class="px-4 py-2 hover:bg-gray-100 font-bold">-</button>
+                                            <input type="number" id="item-qty" value="1" min="1" max="50" class="w-12 text-center border-none p-0 focus:ring-0 text-sm font-medium">
+                                            <button type="button" onclick="adjustQty(1)" class="px-4 py-2 hover:bg-gray-100 font-bold">+</button>
+                                        </div>
+                                    </div>
+                                    <!-- Weight estimate helper message -->
+                                    <div id="laundry-weight-note" class="text-xs text-gray-400 leading-normal">
+                                        <i class="fa-solid fa-circle-info text-secondary"></i> Weight-based services are estimated by basket weight and verified on-site by valets.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weight Calculator Basket Row -->
+                            <div class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-sm font-bold text-primary">Calculation Basket</span>
+                                    <button type="button" onclick="addItemToBasket()" class="px-4 py-1.5 bg-secondary text-white rounded-lg text-xs font-bold hover:bg-opacity-90">
+                                        Add Service
+                                    </button>
+                                </div>
+                                <div id="basket-items-container" class="space-y-2 max-h-48 overflow-y-auto mb-4">
+                                    <!-- Dynamically filled -->
+                                </div>
+                                <div class="border-t border-gray-200 pt-4 flex items-center justify-between">
+                                    <div class="text-xs text-gray-500">
+                                        Estimated Weight: <span id="total-weight" class="font-bold text-primary">0.0 kg</span>
+                                    </div>
+                                    <div class="text-sm font-bold text-primary">
+                                        Subtotal (incl. GST): <span id="total-price" class="text-secondary text-base">₹0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Guest Valet Fields (Visible only when logged out) -->
+                            <div id="booking-guest-fields" class="bg-secondary/5 border border-secondary/15 p-5 rounded-xl space-y-4">
+                                <h5 class="text-sm font-bold text-secondary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[18px]">person_outline</span>
+                                    Contact Details (Guest Mode)
+                                </h5>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Full Name</label>
+                                        <input type="text" id="booking-guest-name" placeholder="John Doe" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Mobile Number</label>
+                                        <input type="tel" id="booking-guest-phone" placeholder="+91 99999 88888" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email Address</label>
+                                        <input type="email" id="booking-guest-email" placeholder="john@example.com" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Location Selector -->
+                            <div class="space-y-3">
+                                <h5 class="text-sm font-bold text-primary flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-secondary">location_on</span>
+                                    Pickup & Drop Coordinates
+                                </h5>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">PG/Apartment Name</label>
+                                        <input type="text" id="pickup-address-apartment" placeholder="Penthouse 4, Imperial Tower" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm" required>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Locality/Area</label>
+                                        <input type="text" id="pickup-address-locality" placeholder="Vasant Vihar" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm" required>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Landmark</label>
+                                        <input type="text" id="pickup-address-landmark" placeholder="Near Metro Station Gate 2" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm" required>
+                                    </div>
+                                </div>
+
+                                <!-- Address tag selection and Save Address checkbox row -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Address Tag</label>
+                                        <div class="flex gap-2">
+                                            <button type="button" onclick="selectAddressType(this, 'home')" class="addr-type-btn active flex-grow py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors" style="border-color: #001726;">Home</button>
+                                            <button type="button" onclick="selectAddressType(this, 'work')" class="addr-type-btn flex-grow py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors" style="border-color: #001726;">Work</button>
+                                            <button type="button" onclick="selectAddressType(this, 'other')" class="addr-type-btn flex-grow py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors" style="border-color: #001726;">Other</button>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col justify-end">
+                                        <div id="save-address-container" style="display: none;" class="flex items-center gap-2 pb-2">
+                                            <input type="checkbox" id="save-address-checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
+                                            <label for="save-address-checkbox" class="text-xs font-bold text-gray-500 cursor-pointer">Save address for later</label>
+                                        </div>
+                                        <div id="save-address-guest-tip" class="text-xs text-gray-400 pb-2">
+                                            <i class="fa-solid fa-lock text-secondary"></i> Sign in to save addresses.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden coordinates inputs to sync Leaflet marker position -->
+                                <input type="hidden" id="pickup-lat" value="28.6139">
+                                <input type="hidden" id="pickup-lng" value="77.2090">
+
+                                <!-- Leaflet interactive map -->
+                                <div class="relative w-full rounded-xl overflow-hidden border border-gray-200">
+                                    <div id="booking-map" style="height: 250px; width: 100%;"></div>
+                                    <button type="button" id="btn-locate-me" onclick="locateUserGPS()" class="absolute bottom-4 right-4 z-[400] bg-white border border-gray-200 text-primary py-2 px-4 rounded-lg shadow-md font-bold text-xs flex items-center gap-2 hover:bg-gray-50">
+                                        <span class="material-symbols-outlined text-sm">my_location</span>
+                                        Get GPS Location
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Date / Time slots / Payment method -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Pickup Date</label>
+                                    <input type="date" id="pickup-date" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2.5 px-4 font-body-md text-sm" required>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Time Slot</label>
+                                    <select id="pickup-slot" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2.5 px-4 font-body-md text-sm" required>
+                                        <option value="07:00 - 09:00">07:00 AM - 09:00 AM</option>
+                                        <option value="09:00 - 11:00" selected>09:00 AM - 11:00 AM</option>
+                                        <option value="11:00 - 13:00">11:00 AM - 01:00 PM</option>
+                                        <option value="13:00 - 15:00">01:00 PM - 03:00 PM</option>
+                                        <option value="15:00 - 17:00">03:00 PM - 05:00 PM</option>
+                                        <option value="17:00 - 19:00">05:00 PM - 07:00 PM</option>
+                                        <option value="19:00 - 21:00">07:00 PM - 09:00 PM</option>
+                                        <option value="21:00 - 23:00">09:00 PM - 11:00 PM</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Payment Method</label>
+                                    <select id="payment-method" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2.5 px-4 font-body-md text-sm" required>
+                                        <option value="cod" selected>Cash on Delivery (COD)</option>
+                                        <option value="card">Credit/Debit Card</option>
+                                        <option value="upi">UPI / Net Banking</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Submit button -->
+                            <button type="submit" id="booking-submit-btn" class="w-full py-4 bg-primary hover:bg-primary-container text-white rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2">
+                                Place Laundry Order
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Info Details Bento -->
+                    <div class="lg:col-span-4 space-y-6">
+                        <div class="bg-primary text-white p-6 rounded-2xl shadow-md space-y-4">
+                            <h4 class="text-lg font-heading font-extrabold text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-secondary">verified</span>
+                                Quality Policy
+                            </h4>
+                            <p class="text-xs text-gray-300 leading-relaxed">Every garment processed under LuxeClean parameters undergoes double inspect sweeps. We weigh and confirm item dimensions prior to washing.</p>
+                            <ul class="space-y-2 text-xs text-gray-300">
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-secondary"></i> Weight items billed on active receipt</li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-secondary"></i> Organic enzymes protect delicate silks</li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-secondary"></i> Free valet pickup for orders over ₹500</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+                            <h4 class="text-base font-bold text-primary">Active Status Tips</h4>
+                            <p class="text-xs text-gray-500 leading-relaxed">When your order moves to <strong>Washing (Processing)</strong>, watch the 3D machine spin! Bubbles will form and clothes will tumble inside the WebGL simulator.</p>
+                        </div>
+                        <div class="bg-green-50/50 border border-green-100 p-6 rounded-2xl space-y-4">
+                            <h4 class="text-base font-bold text-green-800 flex items-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-green-500 text-lg"></i>
+                                WhatsApp Bot Concierge
+                            </h4>
+                            <p class="text-xs text-green-700 leading-relaxed">Click below to converse directly with our scheduling and status dispatch agent.</p>
+                            <a href="https://wa.me/919000011111?text=Hi%20LuxeClean,%20I%20would%20like%20to%20schedule%20a%20laundry%20pickup." target="_blank" class="w-full py-2 bg-[#25D366] text-white font-bold text-center block rounded-lg text-xs hover:bg-opacity-95">
+                                Chat With Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+
+        <!-- 2. LOGIN / AUTH PANEL -->
+        <section class="tab-panel" id="panel-login">
+            <div class="flex flex-col md:flex-row min-h-[calc(100vh-73px)] overflow-hidden bg-white">
+                <!-- Left Side: Visual / Brand Content -->
+                <div class="hidden md:flex md:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 opacity-20 asymmetric-bg bg-secondary-container"></div>
+                    <div class="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary-container"></div>
+                    <div class="relative z-10 px-12 text-center max-w-md">
+                        <h1 class="text-4xl font-heading font-extrabold text-white mb-4">LuxeClean</h1>
+                        <p class="text-sm text-white opacity-80 mb-8 leading-relaxed">
+                            Elevating the standard of care for your finest garments. Experience premium laundry and dry cleaning with effortless precision.
+                        </p>
+                        <div class="flex justify-center space-x-8">
+                            <div class="flex flex-col items-center">
+                                <span class="material-symbols-outlined text-secondary text-4xl mb-2">dry_cleaning</span>
+                                <span class="text-[10px] font-bold text-white tracking-wider uppercase">EXPERT CARE</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="material-symbols-outlined text-secondary text-4xl mb-2">schedule</span>
+                                <span class="text-[10px] font-bold text-white tracking-wider uppercase">EXPRESS TIMING</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Background Visual Image -->
+                    <div class="absolute inset-0 z-0 opacity-30 mix-blend-overlay" style="background-image: url('components/screen_photo.png'); background-size: cover; background-position: center;"></div>
+                </div>
+
+                <!-- Right Side: Forms Card -->
+                <div class="w-full md:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+                    <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+                        <!-- Toggle Form Headers -->
+                        <div class="flex bg-gray-100 p-1 rounded-lg mb-6" id="auth-tabs-container">
+                            <button class="flex-grow py-2.5 rounded-md text-xs font-bold transition-all" id="auth-tab-signin" onclick="showAuthMode('signin')">
+                                SIGN IN
+                            </button>
+                            <button class="flex-grow py-2.5 rounded-md text-xs font-bold transition-all text-gray-500" id="auth-tab-signup" onclick="showAuthMode('signup')">
+                                SIGN UP
+                            </button>
+                            <button class="flex-grow py-2.5 rounded-md text-xs font-bold transition-all text-gray-500" id="auth-tab-admin" onclick="showAuthMode('admin')">
+                                STAFF
+                            </button>
+                        </div>
+
+                        <!-- SIGN IN FORM -->
+                        <form id="signin-form" onsubmit="handleSignInSubmit(event)" class="space-y-4">
+                            <h3 class="text-xl font-bold text-primary mb-1">Welcome Back</h3>
+                            <p class="text-xs text-gray-500 mb-4">Sign in to manage your premium valet services.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Mobile Number</label>
+                                <input type="tel" id="signin-phone" placeholder="+91 99999 88888" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                <input type="password" id="signin-password" placeholder="••••••••" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <button type="submit" class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Sign In
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+
+                        <!-- SIGN UP FORM -->
+                        <form id="signup-form" onsubmit="handleSignUpSubmit(event)" class="space-y-4" style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Create Account</h3>
+                            <p class="text-xs text-gray-500 mb-4">Register for premium smart fabric valet treatment.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Full Name</label>
+                                <input type="text" id="signup-name" placeholder="John Doe" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Mobile Number</label>
+                                <input type="tel" id="signup-phone" placeholder="+91 99999 88888" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email Address</label>
+                                <input type="email" id="signup-email" placeholder="name@domain.com" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                <input type="password" id="signup-password" placeholder="••••••••" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <button type="submit" class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Register
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+
+                        <!-- ADMIN/STAFF LOGIN FORM -->
+                        <form id="admin-login-form" onsubmit="handleAdminLoginSubmit(event)" class="space-y-4" style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Staff Operations Center</h3>
+                            <p class="text-xs text-gray-500 mb-4">Enter staff keys to access order logs.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Mobile Number</label>
+                                <input type="tel" id="admin-login-phone" placeholder="+91 90000 11111" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                <input type="password" id="admin-login-password" placeholder="••••••••" class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium" required>
+                            </div>
+                            <button type="submit" class="w-full bg-secondary hover:bg-secondary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Access Console
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 3. CUSTOMER DASHBOARD PANEL -->
+        <section class="tab-panel" id="panel-customer">
+            <!-- Dummy elements to keep app.js state setters safe -->
+            <div id="customer-auth" style="display: none;"></div>
+            
+            <div id="customer-dashboard" class="max-w-7xl mx-auto px-6 md:px-12 py-10">
+                <!-- Welcome greeting -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-heading font-extrabold text-primary" id="customer-greeting-title">Welcome back, Alexandra</h1>
+                    <p class="text-sm text-gray-500">Your wardrobe's luxury care is active.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Left Columns: Active order details and simulator -->
+                    <div class="lg:col-span-8 space-y-8">
+                        
+                        <!-- Active Orders Container Card -->
+                        <section class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                            <div class="flex justify-between items-center pb-4 border-b border-gray-100 mb-6">
+                                <h2 class="text-xl font-bold text-primary">Active Orders</h2>
+                                <span class="bg-surface-container text-primary font-bold text-xs px-3 py-1 rounded-full uppercase" id="customer-active-orders-badge">1 in Progress</span>
+                            </div>
+
+                            <div id="customer-active-order-details" class="space-y-6">
+                                <!-- Order Stepper, Details, and 3D WebGL simulator loaded dynamically -->
+                                <div id="no-active-order" class="bg-gray-50 p-6 rounded-xl border border-gray-100 flex flex-col items-center justify-center text-muted py-12">
+                                    <i class="fa-solid fa-folder-open text-3xl text-gray-400 mb-3"></i>
+                                    <p class="text-sm">No active orders in progress.</p>
+                                </div>
+
+                                <div id="active-order-tracking" style="display: none;" class="space-y-6">
+                                    <!-- Order Stepper -->
+                                    <div class="grid grid-cols-7 gap-2 pb-6 border-b border-gray-100">
+                                        <div class="flex flex-col items-center gap-2" id="step-pending">
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 text-xs font-bold step-circle"><i class="fa-solid fa-calendar-check"></i></div>
+                                            <span class="text-[9px] font-bold text-center">Scheduled</span>
+                                        </div>
+                                        <div class="flex flex-col items-center gap-2" id="step-pickup_scheduled">
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 text-xs font-bold step-circle"><i class="fa-solid fa-user-tag"></i></div>
+                                            <span class="text-[9px] font-bold text-center">Valet</span>
+                                        </div>
+                                        <div class="flex flex-col items-center gap-2" id="step-picked_up">
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 text-xs font-bold step-circle"><i class="fa-solid fa-truck-pickup"></i></div>
+                                            <span class="text-[9px] font-bold text-center">Picked Up</span>
+                                        </div>
+                                        <div class="flex flex-col items-center gap-2" id="step-processing">
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 text-xs font-bold step-circle"><i class="fa-solid fa-soap"></i></div>
+                                            <span class="text-[9px] font-bold text-center">Washing</span>
+                                        </div>
+                                        <div class="flex flex-col items-center gap-2" id="step-ready">
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 text-xs font-bold step-circle"><i class="fa-solid fa-checkroom"></i></div>
+                                            <span class="text-[9px] font-bold text-center">Ready</span>
+                                        </div>
+                                        <div class="flex flex-col items-center gap-2" id="step-out_for_delivery">
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 text-xs font-bold step-circle"><i class="fa-solid fa-truck"></i></div>
+                                            <span class="text-[9px] font-bold text-center">Delivering</span>
+                                        </div>
+                                        <div class="flex flex-col items-center gap-2" id="step-delivered">
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 text-xs font-bold step-circle"><i class="fa-solid fa-circle-check"></i></div>
+                                            <span class="text-[9px] font-bold text-center">Delivered</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Order Detail View -->
+                                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Order ID</p>
+                                                <p id="track-order-id" class="text-base font-bold text-primary">#LX-XXXXX</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Booking Date</p>
+                                                <p id="track-order-date" class="text-xs text-primary font-medium">Booked on --</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</p>
+                                                <span id="track-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary/15 text-secondary uppercase">PENDING</span>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Order Weight</p>
+                                                <p id="track-weight" class="text-base font-bold text-primary">0.0 kg</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Items Summary</p>
+                                                <p id="track-items-count" class="text-xs text-primary font-medium">0 items</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Amount</p>
+                                                <p id="track-price" class="text-base font-bold text-secondary">₹0.00</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col items-center justify-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
+                                            <div class="w-24 h-24 flex items-center justify-center relative mb-2 bg-gray-50 rounded-lg">
+                                                <div id="qrcode-canvas" class="w-20 h-20 flex items-center justify-center"></div>
+                                            </div>
+                                            <p class="text-[10px] font-bold text-gray-400">Digital Receipt Ticket</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Simulated Machine Details -->
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="bg-gray-50 p-3 rounded-lg text-center border border-gray-100">
+                                                <span class="text-[10px] text-gray-500 block">Time Slot</span>
+                                                <span id="track-slot" class="text-xs font-bold text-primary">-</span>
+                                            </div>
+                                            <div class="bg-gray-50 p-3 rounded-lg text-center border border-gray-100">
+                                                <span class="text-[10px] text-gray-500 block">Address Tier</span>
+                                                <span id="track-address-type" class="text-xs font-bold text-primary">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Order History Grid / List -->
+                        <section class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                            <h2 class="text-xl font-bold text-primary mb-4">Past Services History</h2>
+                            <div class="history-list-container space-y-4" id="history-items-container">
+                                <div class="text-center p-6 text-muted border border-dashed border-gray-200 rounded-xl">
+                                    <i class="fa-solid fa-clock-rotate-left mb-2 text-2xl text-gray-300"></i>
+                                    <p class="text-sm">No historical orders found.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Right Column: Navigation redirection tipping -->
+                    <div class="lg:col-span-4 space-y-6">
+                        <!-- Redirect card to place a booking -->
+                        <div class="bg-primary text-white p-8 rounded-xl shadow-lg flex flex-col gap-4">
+                            <h4 class="text-lg font-heading font-extrabold text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-secondary">add_circle</span>
+                                Need a New Pickup?
+                            </h4>
+                            <p class="text-xs text-gray-300 leading-relaxed">We have centralized our pricing details and scheduling options directly on our main page for responsive accessibility.</p>
+                            <button onclick="switchTab('customer-book')" class="w-full bg-secondary hover:bg-secondary-container text-white font-bold py-3 rounded-lg text-xs transition-colors flex items-center justify-center gap-2">
+                                Launch Scheduler
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </div>
+
+                        <!-- Tip Card -->
+                        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                            <h4 class="text-sm font-bold text-primary mb-2 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-secondary text-sm">star</span>
+                                Live Simulated Progress
+                            </h4>
+                            <p class="text-xs text-gray-500 leading-relaxed">Once valets collect your linens, they update status tabs. Toggle active status parameters to see the WebGL model speed up or slow down live!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 4. ADMIN OPERATIONS PANEL -->
+        <section class="tab-panel" id="panel-admin">
+            <div class="max-w-7xl mx-auto px-6 md:px-12 py-10 space-y-8">
+                <!-- Title headers -->
+                <div>
+                    <h1 class="text-3xl font-heading font-extrabold text-primary">Operations Control</h1>
+                    <p class="text-sm text-gray-500 mt-1">Review active orders, update logistical statuses, and view daily metrics.</p>
+                </div>
+
+                <!-- Bento Stat Counters -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-primary">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Orders</span>
+                            <span class="material-symbols-outlined text-primary">analytics</span>
+                        </div>
+                        <div class="text-3xl font-bold text-primary" id="admin-stat-total">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-status-pending">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Operations</span>
+                            <span class="material-symbols-outlined text-status-pending">hourglass_empty</span>
+                        </div>
+                        <div class="text-3xl font-bold text-primary" id="admin-stat-active">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-status-completed">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Delivered</span>
+                            <span class="material-symbols-outlined text-status-completed">verified</span>
+                        </div>
+                        <div class="text-3xl font-bold text-primary" id="admin-stat-delivered">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-secondary">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Simulated Earnings</span>
+                            <span class="material-symbols-outlined text-secondary">payments</span>
+                        </div>
+                        <div class="text-3xl font-bold text-primary" id="admin-stat-revenue">₹0.00</div>
+                    </div>
+                </div>
+
+                <!-- Main Admin Pane Layout -->
+                <div class="space-y-8">
+                    <!-- Top: Full-Width Orders Control Center Table -->
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col w-full">
+                        <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/50">
+                            <div>
+                                <h3 class="text-lg font-bold text-primary">Orders Logistics Monitor</h3>
+                                <p class="text-xs text-gray-500">Double click or trigger actions to update status rows.</p>
+                            </div>
+                            <button onclick="seedSampleOrders()" class="px-4 py-2 bg-secondary text-white font-bold text-xs rounded-lg hover:bg-opacity-95 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">database</span>
+                                Seed Mock Data
+                            </button>
+                        </div>
+
+                        <!-- Search and Filter Toolbar -->
+                        <div class="p-4 bg-gray-50 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <!-- Search Input with Icon -->
+                            <div class="relative w-full sm:max-w-md">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <span class="material-symbols-outlined text-sm">search</span>
+                                </span>
+                                <input type="text" id="admin-search-input" oninput="handleAdminFilterChange()" placeholder="Search by customer name, phone, or order ID..." class="w-full pl-9 pr-4 py-2 border-gray-200 focus:ring-primary rounded-lg text-xs font-medium placeholder-gray-400 bg-white">
+                            </div>
+                            <!-- Status Filter Dropdown -->
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Filter Status:</span>
+                                <select id="admin-filter-status" onchange="handleAdminFilterChange()" class="border-gray-200 focus:ring-primary rounded-lg py-1.5 px-3 text-xs font-semibold text-primary bg-white cursor-pointer w-full sm:w-48">
+                                    <option value="all">ALL STATUSES</option>
+                                    <option value="pending">PENDING</option>
+                                    <option value="pickup_scheduled">PICKUP SCHEDULED</option>
+                                    <option value="picked_up">PICKED UP</option>
+                                    <option value="processing">PROCESSING</option>
+                                    <option value="ready">READY</option>
+                                    <option value="out_for_delivery">OUT FOR DELIVERY</option>
+                                    <option value="delivered">DELIVERED</option>
+                                    <option value="cancelled">CANCELLED</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Table responsive wrapper -->
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-gray-100 text-primary font-bold uppercase text-[10px] tracking-wider border-b border-gray-200">
+                                        <th class="px-6 py-4">Order & Status</th>
+                                        <th class="px-6 py-4">Customer</th>
+                                        <th class="px-6 py-4">Date & Slot</th>
+                                        <th class="px-6 py-4">Details & Price</th>
+                                        <th class="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-orders-tbody" class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-gray-400 p-8">
+                                            No active orders found. Seed mock data to start.
+                                          </td>
+                                      </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: Revenue Chart -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm w-full h-fit">
+                        <h4 class="text-sm font-bold text-primary mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary">show_chart</span>
+                            Daily Earnings (Simulated)
+                        </h4>
+                        <div class="w-full h-44 relative">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Global Floating Toasts -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Email Preview Modal -->
+    <div id="email-modal" class="email-modal-overlay" onclick="closeEmailModal()">
+        <div class="email-modal-content" onclick="event.stopPropagation()">
+            <div class="email-modal-header">
+                <span class="font-bold text-primary flex items-center gap-2">
+                    <i class="fa-solid fa-envelope-open-text text-secondary"></i>
+                    HTML Email Update Preview
+                </span>
+                <button class="email-modal-close" onclick="closeEmailModal()">&times;</button>
+            </div>
+            <div class="email-modal-body" id="email-modal-body-container">
+                <!-- Dynamic HTML email loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Script integrations -->
+    <script src="app.js"></script>
+</body>
+
+</html>

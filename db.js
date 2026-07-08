@@ -1,0 +1,288 @@
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
+const dbPath = path.resolve(__dirname, 'cleanflow.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error opening database:', err.message);
+    } else {
+        console.log('Connected to the SQLite database at:', dbPath);
+    }
+});
+
+// Helper functions wrapping sqlite3 methods in Promises
+const dbRun = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve({ id: this.lastID, changes: this.changes });
+            }
+        });
+    });
+};
+
+const dbAll = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(rows);
+            }
+        });
+    });
+};
+
+const dbGet = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(row);
+            }
+        });
+    });
+};
+
+// Initialize schema
+const initDb = async () => {
+    db.serialize(async () => {
+        // 1. Users Table
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                phone TEXT UNIQUE NOT NULL,
+                email TEXT NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT DEFAULT 'customer'
+            )
+        `);
+
+        // 2. Addresses Table
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS addresses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_phone TEXT NOT NULL,
+                type TEXT NOT NULL,
+                address_line TEXT NOT NULL
+            )
+        `);
+
+        // 3. Orders Table
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS orders (
+                order_id TEXT PRIMARY KEY,
+                customer_name TEXT NOT NULL,
+                customer_phone TEXT NOT NULL,
+                customer_email TEXT NOT NULL,
+                date TEXT NOT NULL,
+                slot TEXT NOT NULL,
+                address TEXT NOT NULL,
+                address_type TEXT NOT NULL,
+                payment TEXT NOT NULL,
+                weight REAL NOT NULL,
+                items_count INTEGER NOT NULL,
+                amount REAL NOT NULL,
+                status TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                latitude REAL DEFAULT 0.0,
+                longitude REAL DEFAULT 0.0
+            )
+        `);
+
+        // Migrate existing databases safely if columns do not exist
+        try {
+            await dbRun("ALTER TABLE orders ADD COLUMN latitude REAL DEFAULT 0.0");
+        } catch(e) {}
+        try {
+            await dbRun("ALTER TABLE orders ADD COLUMN longitude REAL DEFAULT 0.0");
+        } catch(e) {}
+
+        // 4. Order Items Table
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS order_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                qty INTEGER NOT NULL,
+                weight REAL NOT NULL,
+                service_code TEXT NOT NULL,
+                service_label TEXT NOT NULL,
+                unit_price REAL NOT NULL,
+                total_price REAL NOT NULL,
+                FOREIGN KEY (order_id) REFERENCES orders (order_id) ON DELETE CASCADE
+            )
+        `);
+
+        // 5. Simulated Email Logs Table
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS email_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id TEXT NOT NULL,
+                recipient TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                body TEXT NOT NULL,
+                timestamp TEXT NOT NULL
+            )
+        `);
+
+        console.log('Database tables verified/created successfully.');
+        await seedMockData();
+    });
+};
+
+// Seeding function for initial metrics with updated price catalog services
+const seedMockData = async () => {
+    try {
+        const orderCount = await dbGet("SELECT COUNT(*) as count FROM orders");
+        
+        // Always seed/verify default Admin account
+        const adminUser = await dbGet("SELECT * FROM users WHERE phone = ?", ['admin']);
+        if (!adminUser) {
+            await dbRun(
+                'INSERT INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, ?)',
+                ['Admin Manager', 'admin', 'admin@luxeclean.com', 'ADMIN123', 'admin']
+            );
+            console.log("Seeded default Administrator account (admin/ADMIN123)");
+        }
+
+        if (orderCount.count === 0) {
+            console.log("No orders found. Seeding historical metrics with new services...");
+            
+            // Seed Customer Users
+            const seedCustomers = [
+                { name: "Priya Nair", phone: "+91 88390 12345", email: "priya@email.com", password: "password", role: "customer" },
+                { name: "Amit Patel", phone: "+91 98230 45678", email: "amit@email.com", password: "password", role: "customer" },
+                { name: "Vikram Singh", phone: "+91 77382 99221", email: "vikram@email.com", password: "password", role: "customer" },
+                { name: "Rahul Sharma", phone: "+91 99999 88888", email: "rahul@email.com", password: "password", role: "customer" }
+            ];
+
+            for (const cust of seedCustomers) {
+                await dbRun(
+                    'INSERT OR IGNORE INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, ?)',
+                    [cust.name, cust.phone, cust.email, cust.password, cust.role]
+                );
+            }
+
+            const today = new Date();
+            const day = 24 * 60 * 60 * 1000;
+            
+            const seedOrders = [
+                {
+                    order_id: "CF-38291",
+                    customer_name: "Priya Nair",
+                    customer_phone: "+91 88390 12345",
+                    customer_email: "priya@email.com",
+                    date: new Date(today.getTime() - 4 * day).toISOString().split('T')[0],
+                    slot: "09:00 - 11:00",
+                    address: "Villa 22, Green Valley Estate, Road 12",
+                    address_type: "home",
+                    payment: "online",
+                    weight: 4.0,
+                    items_count: 1,
+                    amount: 180.0,
+                    status: "delivered",
+                    timestamp: "10:30 AM",
+                    items: [
+                        { name: "Wash & Fold (Organic)", qty: 1, weight: 4.0, service_code: "wash_fold_organic", service_label: "Wash & Fold (Organic)", unit_price: 45, total_price: 180 }
+                    ]
+                },
+                {
+                    order_id: "CF-82947",
+                    customer_name: "Amit Patel",
+                    customer_phone: "+91 98230 45678",
+                    customer_email: "amit@email.com",
+                    date: new Date(today.getTime() - 3 * day).toISOString().split('T')[0],
+                    slot: "14:00 - 16:00",
+                    address: "Office 402, Trade Tower, Phase 2",
+                    address_type: "work",
+                    payment: "wallet",
+                    weight: 1.0,
+                    items_count: 2,
+                    amount: 20.0,
+                    status: "delivered",
+                    timestamp: "03:15 PM",
+                    items: [
+                        { name: "Only Iron", qty: 2, weight: 1.0, service_code: "only_iron", service_label: "Only Iron", unit_price: 10, total_price: 20 }
+                    ]
+                },
+                {
+                    order_id: "CF-92049",
+                    customer_name: "Vikram Singh",
+                    customer_phone: "+91 77382 99221",
+                    customer_email: "vikram@email.com",
+                    date: new Date(today.getTime() - 2 * day).toISOString().split('T')[0],
+                    slot: "11:00 - 13:00",
+                    address: "A-502, Sky High Heights, Sector 15",
+                    address_type: "home",
+                    payment: "cash",
+                    weight: 1.0,
+                    items_count: 3,
+                    amount: 300.0,
+                    status: "delivered",
+                    timestamp: "12:00 PM",
+                    items: [
+                        { name: "Dry Cleaning (Basic)", qty: 3, weight: 1.0, service_code: "dry_cleaning_basic", service_label: "Dry Cleaning (Basic)", unit_price: 100, total_price: 300 }
+                    ]
+                },
+                {
+                    order_id: "CF-10294",
+                    customer_name: "Rahul Sharma",
+                    customer_phone: "+91 99999 88888",
+                    customer_email: "rahul@email.com",
+                    date: new Date(today.getTime() - 1 * day).toISOString().split('T')[0],
+                    slot: "18:00 - 20:00",
+                    address: "Flat 402, Seawood Towers, Sector 45",
+                    address_type: "home",
+                    payment: "online",
+                    weight: 5.0,
+                    items_count: 1,
+                    amount: 225.0,
+                    status: "delivered",
+                    timestamp: "07:22 PM",
+                    items: [
+                        { name: "Wash & Iron (Normal)", qty: 1, weight: 5.0, service_code: "wash_iron_normal", service_label: "Wash & Iron (Normal)", unit_price: 45, total_price: 225 }
+                    ]
+                }
+            ];
+
+            for (const order of seedOrders) {
+                const lat = order.latitude || 28.6139;
+                const lng = order.longitude || 77.2090;
+                await dbRun(`
+                    INSERT INTO orders (
+                        order_id, customer_name, customer_phone, customer_email, date, slot, address, address_type, payment, weight, items_count, amount, status, timestamp, latitude, longitude
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [
+                    order.order_id, order.customer_name, order.customer_phone, order.customer_email, order.date, order.slot, order.address, order.address_type,
+                    order.payment, order.weight, order.items_count, order.amount, order.status, order.timestamp, lat, lng
+                ]);
+
+                for (const item of order.items) {
+                    await dbRun(`
+                        INSERT INTO order_items (
+                            order_id, name, qty, weight, service_code, service_label, unit_price, total_price
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `, [
+                        order.order_id, item.name, item.qty, item.weight, item.service_code, item.service_label, item.unit_price, item.total_price
+                    ]);
+                }
+            }
+            
+            console.log("Database seeded successfully with new catalog records.");
+        }
+    } catch (e) {
+        console.error("Error seeding mock data:", e.message);
+    }
+};
+
+module.exports = {
+    initDb,
+    dbRun,
+    dbAll,
+    dbGet
+};
