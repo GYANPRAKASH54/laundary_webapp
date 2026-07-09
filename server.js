@@ -611,7 +611,7 @@ async function sendMockEmail(order, type) {
     // Generate dynamic UPI Scan-to-Pay QR code block if billing is active and payment is UPI
     let qrSectionHtml = '';
     if (orderPayment === 'upi' && orderAmount > 0) {
-        const upiUrl = `upi://pay?pa=369laundry@upi&pn=369%20Laundry&am=${orderAmount.toFixed(2)}&cu=INR&tn=Order-${orderId}`;
+        const upiUrl = `upi://pay?pa=bharatpe09917234203@yesbankltd&pn=369%20Laundry&am=${orderAmount.toFixed(2)}&cu=INR&tn=Order-${orderId}`;
         const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(upiUrl)}`;
         
         qrSectionHtml = `
