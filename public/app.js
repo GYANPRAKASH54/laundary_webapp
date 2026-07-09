@@ -37,6 +37,35 @@ let waterGain = null;
 const API_BASE = window.location.origin === "file://" ? "http://localhost:3000/api" : `${window.location.origin}/api`;
 let useLocalFallback = false;
 
+// Dynamic Lazy Load Scripts/Stylesheets
+function loadScriptLazy(url) {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${url}"]`)) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load script ${url}`));
+        document.body.appendChild(script);
+    });
+}
+
+function loadStylesheetLazy(url) {
+    return new Promise((resolve) => {
+        if (document.querySelector(`link[href="${url}"]`)) {
+            resolve();
+            return;
+        }
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = url;
+        link.onload = () => resolve();
+        document.head.appendChild(link);
+    });
+}
+
 // 30-item Premium Price Catalog
 const priceCatalog = {
     // Weight-based (₹ / kg)
@@ -2493,9 +2522,16 @@ function startWasherConsoleTimer(totalSeconds) {
 
 
 // CHART MANAGEMENT (Admin Panel)
-function initAdminChart() {
+async function initAdminChart() {
     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
+
+    try {
+        await loadScriptLazy("https://cdn.jsdelivr.net/npm/chart.js");
+    } catch (e) {
+        console.error("Failed to load Chart.js:", e.message);
+        return;
+    }
 
     chartInstance = new Chart(ctx, {
         type: 'bar',
@@ -2563,15 +2599,18 @@ function adjustQty(change) {
     playBeep(523.25, 0.05, 0); 
 }
 
-function initBookingMap() {
+async function initBookingMap() {
     const mapDiv = document.getElementById('booking-map');
     if (!mapDiv || bookingMap) return;
 
-    // Initial Coordinates: New Delhi (28.6139, 77.2090)
-    const defaultLat = 28.6139;
-    const defaultLng = 77.2090;
-
     try {
+        await loadStylesheetLazy("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
+        await loadScriptLazy("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js");
+
+        // Initial Coordinates: New Delhi (28.6139, 77.2090)
+        const defaultLat = 28.6139;
+        const defaultLng = 77.2090;
+
         bookingMap = L.map('booking-map').setView([defaultLat, defaultLng], 13);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -2720,7 +2759,7 @@ let html5QrScanner = null;
 let currentWeighInOrder = null;
 let currentDeliveryOrder = null;
 
-function openQRScannerModal() {
+async function openQRScannerModal() {
     const modal = document.getElementById('admin-qr-scanner-modal');
     if (modal) {
         modal.style.display = 'flex';
@@ -2728,14 +2767,18 @@ function openQRScannerModal() {
     }
     
     const statusDiv = document.getElementById('admin-qr-status');
-    if (statusDiv) statusDiv.innerHTML = 'Scanner status: Ready';
+    if (statusDiv) statusDiv.innerHTML = 'Scanner status: Loading library...';
     
-    const placeholder = document.getElementById('admin-qr-camera-placeholder');
-    if (placeholder) placeholder.style.display = 'flex';
+    try {
+        await loadScriptLazy("https://unpkg.com/html5-qrcode");
+        
+        if (statusDiv) statusDiv.innerHTML = 'Scanner status: Ready';
+        
+        const placeholder = document.getElementById('admin-qr-camera-placeholder');
+        if (placeholder) placeholder.style.display = 'flex';
 
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    
-    if (typeof Html5Qrcode !== 'undefined') {
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
         html5QrScanner = new Html5Qrcode("admin-qr-reader");
         Html5Qrcode.getCameras().then(devices => {
             if (devices && devices.length > 0) {
@@ -2764,8 +2807,9 @@ function openQRScannerModal() {
             console.error("Get cameras error:", err);
             if (placeholder) placeholder.style.display = 'flex';
         });
-    } else {
-        console.error("Html5Qrcode library not loaded.");
+    } catch (err) {
+        console.error("Failed to load Html5Qrcode library:", err.message);
+        if (statusDiv) statusDiv.innerHTML = '<span class="text-red-500">Failed to load scanner library.</span>';
     }
 }
 
