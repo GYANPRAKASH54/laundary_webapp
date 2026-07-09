@@ -419,25 +419,48 @@
                             </div>
 
                             <!-- Weight Calculator Basket Row -->
-                            <div class="bg-gray-50 p-5 rounded-xl border border-gray-100">
-                                <div class="flex items-center justify-between mb-4">
+                            <div class="bg-gray-50 p-5 rounded-xl border border-gray-100 space-y-4">
+                                <div class="flex items-center justify-between">
                                     <span class="text-sm font-bold text-primary">Calculation Basket</span>
                                     <button type="button" onclick="addItemToBasket()"
                                         class="px-4 py-1.5 bg-secondary text-white rounded-lg text-xs font-bold hover:bg-opacity-90">
                                         Add Service
                                     </button>
                                 </div>
-                                <div id="basket-items-container" class="space-y-2 max-h-48 overflow-y-auto mb-4">
+                                <div id="basket-items-container" class="space-y-2 max-h-48 overflow-y-auto">
                                     <!-- Dynamically filled -->
                                 </div>
-                                <div class="border-t border-gray-200 pt-4 flex items-center justify-between">
-                                    <div class="text-xs text-gray-500">
-                                        Estimated Weight: <span id="total-weight" class="font-bold text-primary">0.0
-                                            kg</span>
+                                
+                                <!-- Discount Coupon Field -->
+                                <div class="border-t border-gray-200 pt-3 space-y-2">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="relative flex-grow">
+                                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">sell</span>
+                                            <input type="text" id="coupon-code-input" placeholder="Enter Coupon Code (e.g. WELCOME10)" 
+                                                class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold uppercase focus:ring-primary focus:border-primary">
+                                        </div>
+                                        <button type="button" onclick="applyCoupon()" 
+                                            class="px-4 py-1.5 bg-primary text-white font-bold text-xs rounded-lg hover:bg-opacity-95 transition-all">
+                                            Apply
+                                        </button>
                                     </div>
-                                    <div class="text-sm font-bold text-primary">
-                                        Subtotal (incl. GST): <span id="total-price"
-                                            class="text-secondary text-base">₹0.00</span>
+                                    <!-- Success coupon feedback -->
+                                    <div id="coupon-success-msg" class="text-[11px] font-bold text-emerald-600 flex items-center gap-1" style="display: none;">
+                                        <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                        Coupon <span id="applied-coupon-name" class="underline"></span> applied successfully! Saved <span id="applied-coupon-discount"></span>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-gray-200 pt-3 flex items-center justify-between">
+                                    <div class="text-xs text-gray-500">
+                                        Estimated Weight: <span id="total-weight" class="font-bold text-primary">0.0 kg</span>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <div id="original-price-row" class="text-xs text-gray-400 line-through font-semibold" style="display: none;">₹0.00</div>
+                                        <div class="text-sm font-bold text-primary">
+                                            Subtotal (incl. GST): <span id="total-price"
+                                                class="text-secondary text-base">₹0.00</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -809,6 +832,71 @@
                     </div>
                 </div>
             </div>
+            <!-- Premium Brand Footer -->
+            <footer class="bg-primary text-white mt-16 border-t border-secondary/20">
+                <div class="max-w-7xl mx-auto px-6 md:px-12 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <!-- Column 1: Brand & Logo -->
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <img src="components/screen_logo.png" class="h-8 w-auto brightness-0 invert">
+                        </div>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            Premium care for your finest garments. Bringing meticulous laundry, dry cleaning, and valet convenience directly to your doorstep.
+                        </p>
+                        <div class="flex items-center gap-3 text-gray-300 text-sm">
+                            <a href="#" class="hover:text-secondary transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                            <a href="#" class="hover:text-secondary transition-colors"><i class="fa-brands fa-facebook"></i></a>
+                            <a href="#" class="hover:text-secondary transition-colors"><i class="fa-brands fa-twitter"></i></a>
+                        </div>
+                    </div>
+                    
+                    <!-- Column 2: Our Services -->
+                    <div class="space-y-3">
+                        <h5 class="text-xs font-bold uppercase tracking-wider text-secondary">Our Services</h5>
+                        <ul class="space-y-2 text-xs text-gray-300">
+                            <li><a href="#services" class="hover:text-secondary transition-colors">Premium Wash & Fold</a></li>
+                            <li><a href="#services" class="hover:text-secondary transition-colors">Delicate Dry Cleaning</a></li>
+                            <li><a href="#services" class="hover:text-secondary transition-colors">Specialist Shoe Spa</a></li>
+                            <li><a href="#services" class="hover:text-secondary transition-colors">Leather & Toy Care</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Column 3: Quick Links -->
+                    <div class="space-y-3">
+                        <h5 class="text-xs font-bold uppercase tracking-wider text-secondary">Quick Links</h5>
+                        <ul class="space-y-2 text-xs text-gray-300">
+                            <li><a href="#services" onclick="switchTab('landing')" class="hover:text-secondary transition-colors">Overview</a></li>
+                            <li><a href="#landing-booking-container" onclick="switchTab('customer-book')" class="hover:text-secondary transition-colors">Book a Valet</a></li>
+                            <li><a href="#landing-tracking-section" class="hover:text-secondary transition-colors">Track Live Order</a></li>
+                            <li><a href="#" onclick="showAuthMode('signin')" class="hover:text-secondary transition-colors">Staff Access Portal</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Column 4: Reach Us -->
+                    <div class="space-y-3">
+                        <h5 class="text-xs font-bold uppercase tracking-wider text-secondary">Reach Us</h5>
+                        <ul class="space-y-2 text-xs text-gray-300">
+                            <li class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-secondary">call</span>
+                                <span>+91 99999 88888</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-secondary">mail</span>
+                                <a href="mailto:support@washingbasket.com" class="hover:text-secondary transition-colors">support@washingbasket.com</a>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-secondary">location_on</span>
+                                <span>12, Connaught Place, New Delhi, India</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Bottom bar -->
+                <div class="border-t border-white/10 py-6 text-center text-[10px] text-gray-400">
+                    <p>© 2026 Washing Basket India Inc. All rights reserved. Meticulously designed for premium garment care.</p>
+                </div>
+            </footer>
         </section>
 
 

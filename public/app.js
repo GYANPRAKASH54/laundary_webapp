@@ -9,6 +9,7 @@ let activeCustomerPanel = 'book';
 let activeAddressType = 'home';
 let chartInstance = null;
 let activeLogTab = 'wa';
+let activeCoupon = null;
 
 // Three.js washer instance
 let washer3D = null;
@@ -822,6 +823,13 @@ function renderBasket() {
         container.innerHTML = `<div class="empty-basket-message">Your basket is empty. Add items on the left to start!</div>`;
         document.getElementById('total-weight').innerText = "0.0 kg";
         document.getElementById('total-price').innerText = "₹0.00";
+        
+        // Hide coupon success details if empty
+        const origPriceRow = document.getElementById('original-price-row');
+        const successMsg = document.getElementById('coupon-success-msg');
+        if (origPriceRow) origPriceRow.style.display = 'none';
+        if (successMsg) successMsg.style.display = 'none';
+        activeCoupon = null;
         return;
     }
 
@@ -857,9 +865,46 @@ function renderBasket() {
 
     document.getElementById('total-weight').innerText = hasWeightBased ? "Weighed at facility" : `${totalWeight.toFixed(2)} kg`;
     
-    let subtotalDisplay = `₹${totalPrice.toFixed(2)}`;
+    // Apply discount calculations
+    let finalPrice = totalPrice;
+    let discountAmount = 0;
+    if (activeCoupon) {
+        if (activeCoupon.type === 'percent') {
+            discountAmount = totalPrice * (activeCoupon.value / 100);
+        } else if (activeCoupon.type === 'flat') {
+            discountAmount = activeCoupon.value;
+        }
+        finalPrice = Math.max(0, totalPrice - discountAmount);
+    }
+
+    // Render coupon success labels
+    const origPriceRow = document.getElementById('original-price-row');
+    const successMsg = document.getElementById('coupon-success-msg');
+    const appliedName = document.getElementById('applied-coupon-name');
+    const appliedDiscount = document.getElementById('applied-coupon-discount');
+
+    if (activeCoupon && totalPrice > 0) {
+        if (origPriceRow) {
+            origPriceRow.style.display = 'block';
+            origPriceRow.innerText = hasWeightBased 
+                ? `₹${totalPrice.toFixed(2)} + Weigh-in` 
+                : `₹${totalPrice.toFixed(2)}`;
+        }
+        if (successMsg) {
+            successMsg.style.display = 'flex';
+            appliedName.innerText = activeCoupon.code;
+            appliedDiscount.innerText = activeCoupon.type === 'percent' 
+                ? `${activeCoupon.value}%` 
+                : `₹${activeCoupon.value.toFixed(2)}`;
+        }
+    } else {
+        if (origPriceRow) origPriceRow.style.display = 'none';
+        if (successMsg) successMsg.style.display = 'none';
+    }
+
+    let subtotalDisplay = `₹${finalPrice.toFixed(2)}`;
     if (hasWeightBased) {
-        subtotalDisplay = totalPrice > 0 ? `₹${totalPrice.toFixed(2)} + Weigh-in` : "Awaiting Weigh-in";
+        subtotalDisplay = finalPrice > 0 ? `₹${finalPrice.toFixed(2)} + Weigh-in` : "Awaiting Weigh-in";
     }
     document.getElementById('total-price').innerText = subtotalDisplay;
 }
@@ -921,6 +966,17 @@ async function handleNewBooking(e) {
         totalPrice += item.totalPrice;
         itemsCount += item.qty;
     });
+
+    // Apply active coupon discount to order total
+    let discountAmount = 0;
+    if (activeCoupon) {
+        if (activeCoupon.type === 'percent') {
+            discountAmount = totalPrice * (activeCoupon.value / 100);
+        } else if (activeCoupon.type === 'flat') {
+            discountAmount = activeCoupon.value;
+        }
+        totalPrice = Math.max(0, totalPrice - discountAmount);
+    }
 
     let orderId = `LX-${Math.floor(10000 + Math.random() * 90000)}`;
     if (!useLocalFallback) {
@@ -1009,6 +1065,9 @@ async function handleNewBooking(e) {
     }
 
     currentBasket = [];
+    activeCoupon = null;
+    const coupInp = document.getElementById('coupon-code-input');
+    if (coupInp) coupInp.value = '';
     renderBasket();
     document.getElementById('pickup-address-apartment').value = '';
     document.getElementById('pickup-address-locality').value = '';
@@ -3101,3 +3160,33 @@ function toggleMobileAuth() {
     }
 }
 window.toggleMobileAuth = toggleMobileAuth;
+
+function applyCoupon() {
+    const code = document.getElementById('coupon-code-input').value.trim().toUpperCase();
+    if (!code) {
+        showToast("Please enter a coupon code first.", "warning");
+        return;
+    }
+
+    if (currentBasket.length === 0) {
+        showToast("Add services to basket before applying coupons.", "warning");
+        return;
+    }
+
+    const coupons = {
+        'WELCOME10': { code: 'WELCOME10', type: 'percent', value: 10 },
+        'LAUNDRY20': { code: 'LAUNDRY20', type: 'percent', value: 20 },
+        'FREESHIP': { code: 'FREESHIP', type: 'flat', value: 50 }
+    };
+
+    if (coupons[code]) {
+        activeCoupon = coupons[code];
+        renderBasket();
+        showToast(`Coupon ${code} applied successfully!`, "success");
+        playBeep(660, 0.15, 0);
+    } else {
+        showToast("Invalid coupon code. Try WELCOME10 or LAUNDRY20.", "danger");
+        playBeep(220, 0.25, 0);
+    }
+}
+window.applyCoupon = applyCoupon;
