@@ -201,7 +201,7 @@ app.get('/api/orders', async (req, res) => {
         res.json(mappedOrders);
     } catch (err) {
         console.error('Fetch orders error:', err.message);
-        res.status(500).json({ error: 'Database error fetching orders' });
+        res.status(500).json({ error: 'Database error fetching orders', message: err.message });
     }
 });
 
@@ -752,6 +752,16 @@ if (!process.env.VERCEL) {
         openBrowser(`http://localhost:${PORT}`);
     });
 }
+
+// Global Express Error Handler Middleware
+app.use((err, req, res, next) => {
+    console.error("❌ Unhandled Express Error:", err);
+    res.status(500).json({
+        error: "Internal Server Error",
+        message: err.message,
+        stack: process.env.VERCEL ? undefined : err.stack
+    });
+});
 
 // Export Express app for Vercel Serverless runtime compatibility
 module.exports = app;
