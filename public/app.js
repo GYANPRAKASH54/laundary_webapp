@@ -770,20 +770,17 @@ function applyLoginState(user) {
 
     // Differentiate admin/valet views
     const revenueCard = document.getElementById('revenueChart') ? document.getElementById('revenueChart').closest('.lg\\:col-span-5') : null;
-    const seedBtn = document.querySelector('button[onclick="seedSampleOrders()"]');
     const customersTab = document.getElementById('admin-subtab-btn-customers');
     const valetsTab = document.getElementById('admin-subtab-btn-valets');
 
     if (user.role === 'valet') {
         if (revenueCard) revenueCard.style.display = 'none';
-        if (seedBtn) seedBtn.style.display = 'none';
         if (customersTab) customersTab.style.display = 'none';
         setTimeout(() => {
             if (valetsTab) switchAdminSubTab('valets');
         }, 100);
     } else {
         if (revenueCard) revenueCard.style.display = 'block';
-        if (seedBtn) seedBtn.style.display = 'inline-flex';
         if (customersTab) customersTab.style.display = 'inline-block';
         setTimeout(() => {
             if (customersTab) switchAdminSubTab('customers');
@@ -2034,7 +2031,6 @@ function updateAdminStats() {
 
     const deliveredCount = orders.filter(o => o.status === 'delivered').length;
     document.getElementById('admin-stat-delivered').innerText = deliveredCount;
-
     let totalEarnings = 0;
     orders.forEach(o => {
         if (o.status === 'delivered') totalEarnings += o.amount;
@@ -2042,90 +2038,6 @@ function updateAdminStats() {
     document.getElementById('admin-stat-revenue').innerText = `₹${totalEarnings.toFixed(2)}`;
 
     updateRevenueChartData();
-}
-
-async function seedSampleOrders() {
-    if (!useLocalFallback) {
-        showToast("Historical data is already seeded in SQLite db.", "info");
-        await syncAppData();
-        return;
-    }
-
-    const phones = ["+91 99999 88888", "+91 98230 45678", "+91 88390 12345", "+91 77382 99221", "+91 92837 11223"];
-    const day = 24 * 60 * 60 * 1000;
-    const today = new Date();
-
-    const historical = [
-        {
-            orderId: "CF-38291",
-            customerName: "Priya Nair",
-            customerPhone: phones[2],
-            date: new Date(today.getTime() - 4 * day).toISOString().split('T')[0],
-            slot: "09:00 - 11:00",
-            address: "Villa 22, Green Valley Estate, Road 12",
-            addressType: "home",
-            payment: "online",
-            weight: 4.0,
-            itemsCount: 1,
-            amount: 180,
-            status: "delivered",
-            timestamp: "10:30 AM",
-            items: [{ name: "Wash & Fold (Organic)", qty: 1, totalWeight: 4.0, serviceCode: "wash_fold_organic", serviceLabel: "Wash & Fold (Organic)", unitPrice: 45, totalPrice: 180 }]
-        },
-        {
-            orderId: "CF-82947",
-            customerName: "Amit Patel",
-            customerPhone: phones[1],
-            date: new Date(today.getTime() - 3 * day).toISOString().split('T')[0],
-            slot: "14:00 - 16:00",
-            address: "Office 402, Trade Tower, Phase 2",
-            addressType: "work",
-            payment: "wallet",
-            weight: 0.0,
-            itemsCount: 2,
-            amount: 20,
-            status: "delivered",
-            timestamp: "03:15 PM",
-            items: [{ name: "Only Iron", qty: 2, totalWeight: 0, serviceCode: "only_iron", serviceLabel: "Only Iron", unitPrice: 10, totalPrice: 20 }]
-        },
-        {
-            orderId: "CF-92049",
-            customerName: "Vikram Singh",
-            customerPhone: phones[3],
-            date: new Date(today.getTime() - 2 * day).toISOString().split('T')[0],
-            slot: "11:00 - 13:00",
-            address: "A-502, Sky High Heights, Sector 15",
-            addressType: "home",
-            payment: "cash",
-            weight: 0.0,
-            itemsCount: 3,
-            amount: 300,
-            status: "delivered",
-            timestamp: "12:00 PM",
-            items: [{ name: "Dry Cleaning (Basic)", qty: 3, totalWeight: 0, serviceCode: "dry_cleaning_basic", serviceLabel: "Dry Cleaning (Basic)", unitPrice: 100, totalPrice: 300 }]
-        },
-        {
-            orderId: "CF-10294",
-            customerName: "Rahul Sharma",
-            customerPhone: phones[0],
-            date: new Date(today.getTime() - 1 * day).toISOString().split('T')[0],
-            slot: "18:00 - 20:00",
-            address: "Flat 402, Seawood Towers, Sector 45",
-            addressType: "home",
-            payment: "online",
-            weight: 5.0,
-            itemsCount: 1,
-            amount: 225,
-            status: "delivered",
-            timestamp: "07:22 PM",
-            items: [{ name: "Wash & Iron (Normal)", qty: 1, totalWeight: 5.0, serviceCode: "wash_iron_normal", serviceLabel: "Wash & Iron (Normal)", unitPrice: 45, totalPrice: 225 }]
-        }
-    ];
-
-    orders = [...historical, ...orders];
-    renderAdminOrdersTable();
-    updateAdminStats();
-    showToast("Mock historical records seeded in memory.", "success");
 }
 
 // LOG DRAWERS TOGGLERS & RENDERERS
@@ -2766,7 +2678,7 @@ window.handleNewBooking = handleNewBooking;
 window.switchCustomerPanel = switchCustomerPanel;
 window.reorderItems = reorderItems;
 window.cancelActiveOrder = cancelActiveOrder;
-window.seedSampleOrders = seedSampleOrders;
+
 window.advanceOrderStatus = advanceOrderStatus;
 window.weighAndProcessOrder = weighAndProcessOrder;
 window.toggleWasherPower = toggleWasherPower;
