@@ -995,6 +995,28 @@ function renderBasket() {
         finalPrice = Math.max(0, totalPrice - discountAmount);
     }
 
+    // Apply Express Delivery 25% surcharge
+    const expressCheckbox = document.getElementById('express-delivery');
+    const isExpress = expressCheckbox ? expressCheckbox.checked : false;
+    let expressSurcharge = 0;
+    if (isExpress && totalPrice > 0) {
+        expressSurcharge = finalPrice * 0.25;
+        finalPrice += expressSurcharge;
+    }
+
+    // Render express fee row
+    const expressPriceRow = document.getElementById('express-charge-row');
+    if (expressPriceRow) {
+        if (isExpress && totalPrice > 0) {
+            expressPriceRow.style.display = 'block';
+            expressPriceRow.innerText = hasWeightBased
+                ? `Express Fee (+25%): ₹${expressSurcharge.toFixed(2)} + Weigh-in`
+                : `Express Fee (+25%): ₹${expressSurcharge.toFixed(2)}`;
+        } else {
+            expressPriceRow.style.display = 'none';
+        }
+    }
+
     // Render coupon success labels
     const origPriceRow = document.getElementById('original-price-row');
     const successMsg = document.getElementById('coupon-success-msg');
@@ -1108,6 +1130,13 @@ async function handleNewBooking(e) {
         totalPrice = Math.max(0, totalPrice - discountAmount);
     }
 
+    // Apply Express Delivery 25% surcharge
+    const expressCheckbox = document.getElementById('express-delivery');
+    const isExpress = expressCheckbox ? expressCheckbox.checked : false;
+    if (isExpress && totalPrice > 0) {
+        totalPrice = totalPrice * 1.25;
+    }
+
     let orderId = `LX-${Math.floor(10000 + Math.random() * 90000)}`;
     if (!useLocalFallback) {
         try {
@@ -1153,6 +1182,7 @@ async function handleNewBooking(e) {
         timestamp: new Date().toLocaleTimeString(),
         latitude: latVal,
         longitude: lngVal,
+        isExpress: isExpress,
         items: [...currentBasket]
     };
 
@@ -1210,6 +1240,8 @@ async function handleNewBooking(e) {
     document.getElementById('pickup-address-apartment').value = '';
     document.getElementById('pickup-address-locality').value = '';
     document.getElementById('pickup-address-landmark').value = '';
+    const expressCheckboxReset = document.getElementById('express-delivery');
+    if (expressCheckboxReset) expressCheckboxReset.checked = false;
 
     if (currentUser) {
         switchCustomerPanel('track');

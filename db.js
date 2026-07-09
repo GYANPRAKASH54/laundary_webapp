@@ -239,7 +239,8 @@ const initDb = async () => {
                     timestamp VARCHAR(50) NOT NULL,
                     latitude REAL DEFAULT 0.0,
                     longitude REAL DEFAULT 0.0,
-                    valet_id INTEGER REFERENCES valets(id) ON DELETE SET NULL
+                    valet_id INTEGER REFERENCES valets(id) ON DELETE SET NULL,
+                    is_express BOOLEAN DEFAULT FALSE
                 )
             `);
 
@@ -358,6 +359,9 @@ const initDb = async () => {
         } catch(e) {}
         try {
             await dbRun("ALTER TABLE orders ADD COLUMN longitude REAL DEFAULT 0.0");
+        } catch(e) {}
+        try {
+            await dbRun("ALTER TABLE orders ADD COLUMN is_express INTEGER DEFAULT 0");
         } catch(e) {}
 
         // 4. Order Items Table

@@ -325,7 +325,8 @@ app.get('/api/orders', async (req, res) => {
             status: order.status,
             timestamp: order.timestamp,
             latitude: order.latitude || 0,
-            longitude: order.longitude || 0
+            longitude: order.longitude || 0,
+            isExpress: order.is_express === 1 || order.is_express === true || order.is_express === 'true' || order.is_express === '1'
         }));
 
         for (let order of mappedOrders) {
@@ -423,7 +424,8 @@ app.get('/api/orders/:orderId', async (req, res) => {
             status: order.status,
             timestamp: order.timestamp,
             latitude: order.latitude || 0,
-            longitude: order.longitude || 0
+            longitude: order.longitude || 0,
+            isExpress: order.is_express === 1 || order.is_express === true || order.is_express === 'true' || order.is_express === '1'
         };
 
         const items = await dbAll('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
@@ -471,7 +473,7 @@ app.get('/api/orders/next-id', async (req, res) => {
 // 6. ORDERS: PLACE ORDER
 app.post('/api/orders', async (req, res) => {
     const {
-        orderId, customerName, customerPhone: rawPhone, customerEmail, date, slot, address, addressType, payment, weight, itemsCount, amount, status, timestamp, items, latitude, longitude
+        orderId, customerName, customerPhone: rawPhone, customerEmail, date, slot, address, addressType, payment, weight, itemsCount, amount, status, timestamp, items, latitude, longitude, isExpress
     } = req.body;
 
     if (!orderId || !rawPhone || !items || items.length === 0) {
@@ -491,10 +493,10 @@ app.post('/api/orders', async (req, res) => {
     try {
         await dbRun(`
             INSERT INTO orders (
-                order_id, customer_name, customer_phone, customer_email, date, slot, address, address_type, payment, weight, items_count, amount, status, timestamp, latitude, longitude
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                order_id, customer_name, customer_phone, customer_email, date, slot, address, address_type, payment, weight, items_count, amount, status, timestamp, latitude, longitude, is_express
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-            orderId, customerName, customerPhone, customerEmail, date, slot, address, addressType, payment, weight, itemsCount, amount, status, timestamp, parseFloat(latitude || 0), parseFloat(longitude || 0)
+            orderId, customerName, customerPhone, customerEmail, date, slot, address, addressType, payment, weight, itemsCount, amount, status, timestamp, parseFloat(latitude || 0), parseFloat(longitude || 0), isExpress ? 1 : 0
         ]);
 
         for (const item of items) {
@@ -574,6 +576,10 @@ app.put('/api/orders/:orderId/metrics', async (req, res) => {
                 'UPDATE order_items SET weight = ?, qty = ?, total_price = ? WHERE id = ?',
                 [item.weight, item.qty, item.total_price, item.id]
             );
+        }
+
+        if (order.is_express === 1 || order.is_express === true || order.is_express === 'true' || order.is_express === '1') {
+            finalAmount = finalAmount * 1.25;
         }
 
         await dbRun(

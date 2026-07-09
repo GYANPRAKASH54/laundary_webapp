@@ -73,7 +73,8 @@ CREATE TABLE IF NOT EXISTS orders (
     timestamp VARCHAR(50) NOT NULL,
     latitude REAL DEFAULT 0.0,
     longitude REAL DEFAULT 0.0,
-    valet_id INTEGER REFERENCES valets(id) ON DELETE SET NULL
+    valet_id INTEGER REFERENCES valets(id) ON DELETE SET NULL,
+    is_express BOOLEAN DEFAULT FALSE
 );
 
 -- 6. Order Items Table
