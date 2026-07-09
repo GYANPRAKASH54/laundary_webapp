@@ -598,12 +598,12 @@ async function handleAdminLoginSubmit(e) {
             alert("Server error connecting to database.");
         }
     } else {
-        if (phone === 'admin' && password === 'ADMIN123') {
-            applyLoginState({ name: "Admin Manager", phone: "admin", email: "admin@luxeclean.com", role: "admin" });
+        if ((phone === 'admin' || phone === '8210895737') && password === 'ADMIN123') {
+            applyLoginState({ name: "Admin Manager", phone: phone, email: "admin@luxeclean.com", role: "admin" });
             showToast("Admin authenticated successfully (Simulated memory mode)", "success");
             switchTab('admin');
         } else {
-            alert("Incorrect admin credentials in simulated mode. Use phone: admin and password: ADMIN123.");
+            alert("Incorrect admin credentials in simulated mode. Use phone: admin or 8210895737 and password: ADMIN123.");
         }
     }
 }
