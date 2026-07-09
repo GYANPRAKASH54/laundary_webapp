@@ -112,9 +112,14 @@ app.post('/api/auth/signup', async (req, res) => {
     const phone = normalizePhoneNumber(rawPhone);
 
     try {
-        const existing = await dbGet('SELECT * FROM users WHERE phone = ? OR email = ?', [phone, email]);
-        if (existing) {
-            return res.status(400).json({ error: 'User with this mobile number or email already exists.' });
+        const existingPhone = await dbGet('SELECT * FROM users WHERE phone = ?', [phone]);
+        if (existingPhone) {
+            return res.status(400).json({ error: 'This phone number has already been registered.' });
+        }
+
+        const existingEmail = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
+        if (existingEmail) {
+            return res.status(400).json({ error: 'This email address has already been registered.' });
         }
 
         await dbRun(
@@ -152,6 +157,95 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (err) {
         console.error('Login error:', err.message);
         res.status(500).json({ error: 'Database error occurred during login' });
+    }
+});
+
+// 2.1 AUTHENTICATION: FORGOT PASSWORD
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    try {
+        const user = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
+        if (!user) {
+            return res.status(400).json({ error: 'No user registered with this email address.' });
+        }
+
+        // Generate a 6-digit verification code
+        const token = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 mins expiry
+
+        // Store reset token
+        await dbRun(`
+            INSERT INTO password_resets (email, token, expires_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT (email) DO UPDATE SET token = EXCLUDED.token, expires_at = EXCLUDED.expires_at
+        `, [email, token, expiresAt]);
+
+        const origin = req.headers.origin || 'http://localhost:3000';
+        const resetLink = `${origin}/?resetToken=${token}&email=${encodeURIComponent(email)}`;
+
+        const emailHtml = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #c2c7cd; border-radius: 12px; background-color: #ffffff; color: #001726;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #001726; margin: 0;">369 Laundry</h2>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #e1e4e8; margin: 20px 0;" />
+                <h3 style="color: #001726;">Password Reset Request</h3>
+                <p>Hello ${user.name},</p>
+                <p>We received a request to reset your password. You can set a new password by clicking the link below:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetLink}" style="background-color: #005a9c; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block;">Reset Password Link</a>
+                </div>
+                <p>Alternatively, you can manually enter the following 6-digit verification code on the reset page:</p>
+                <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px; text-align: center; color: #005a9c; margin: 15px 0;">${token}</p>
+                <p style="font-size: 11px; color: #72787e;">This code and link will expire in 15 minutes. If you did not request this, please ignore this email.</p>
+            </div>
+        `;
+
+        await sendMockEmail(email, "Reset Your 369 Laundry Password", emailHtml);
+        res.json({ success: true, message: 'Password reset link and code sent to your email.' });
+    } catch (err) {
+        console.error('Forgot password error:', err.message);
+        res.status(500).json({ error: 'Database error occurred during reset request.' });
+    }
+});
+
+// 2.2 AUTHENTICATION: RESET PASSWORD
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { email, token, password } = req.body;
+    if (!email || !token || !password) {
+        return res.status(400).json({ error: 'Email, verification code, and new password are required.' });
+    }
+
+    try {
+        const resetRecord = await dbGet('SELECT * FROM password_resets WHERE email = ?', [email]);
+        if (!resetRecord) {
+            return res.status(400).json({ error: 'Invalid reset request. Please request a new code.' });
+        }
+
+        if (resetRecord.token !== token) {
+            return res.status(400).json({ error: 'Incorrect verification code.' });
+        }
+
+        const now = new Date();
+        const expiresAt = new Date(resetRecord.expires_at);
+        if (now > expiresAt) {
+            return res.status(400).json({ error: 'Verification code has expired.' });
+        }
+
+        // Update the user's password in the users table
+        await dbRun('UPDATE users SET password = ? WHERE email = ?', [password, email]);
+
+        // Clean up password resets
+        await dbRun('DELETE FROM password_resets WHERE email = ?', [email]);
+
+        res.json({ success: true, message: 'Password reset completed successfully.' });
+    } catch (err) {
+        console.error('Reset password error:', err.message);
+        res.status(500).json({ error: 'Database error occurred during password reset.' });
     }
 });
 

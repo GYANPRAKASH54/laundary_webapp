@@ -287,6 +287,14 @@ const initDb = async () => {
                 )
             `);
 
+            await dbRun(`
+                CREATE TABLE IF NOT EXISTS password_resets (
+                    email VARCHAR(100) PRIMARY KEY,
+                    token VARCHAR(100) NOT NULL,
+                    expires_at TIMESTAMP NOT NULL
+                )
+            `);
+
             console.log('PostgreSQL database tables verified/created successfully.');
             await seedMockData();
         } catch (e) {
@@ -377,6 +385,14 @@ const initDb = async () => {
                 subject TEXT NOT NULL,
                 body TEXT NOT NULL,
                 timestamp TEXT NOT NULL
+            )
+        `);
+
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS password_resets (
+                email TEXT PRIMARY KEY,
+                token TEXT NOT NULL,
+                expires_at TEXT NOT NULL
             )
         `);
 

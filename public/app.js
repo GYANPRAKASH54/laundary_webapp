@@ -129,6 +129,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     await checkBackendConnection();
     await syncAppData();
 
+    // 6.1 Check for Reset Token URL query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetTokenParam = urlParams.get('resetToken');
+    const resetEmailParam = urlParams.get('email');
+    if (resetTokenParam && resetEmailParam) {
+        showToast("Password reset link detected. Opening password reset form.", "info");
+        const resetEmail = document.getElementById('reset-email');
+        const resetTokenInput = document.getElementById('reset-token');
+        if (resetEmail) resetEmail.value = resetEmailParam;
+        if (resetTokenInput) resetTokenInput.value = resetTokenParam;
+        showAuthMode('reset');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // 7. Start polling sync if connected
     setInterval(async () => {
         if (!useLocalFallback) {
@@ -468,15 +482,19 @@ function showAuthMode(mode) {
     const signinForm = document.getElementById('signin-form');
     const signupForm = document.getElementById('signup-form');
     const adminForm = document.getElementById('admin-login-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const resetForm = document.getElementById('reset-password-form');
     
     if (signinForm) signinForm.style.display = mode === 'signin' ? 'block' : 'none';
     if (signupForm) signupForm.style.display = mode === 'signup' ? 'block' : 'none';
     if (adminForm) adminForm.style.display = mode === 'admin' ? 'block' : 'none';
+    if (forgotForm) forgotForm.style.display = mode === 'forgot' ? 'block' : 'none';
+    if (resetForm) resetForm.style.display = mode === 'reset' ? 'block' : 'none';
 
     // Toggle tab headers container visibility
     const tabsContainer = document.getElementById('auth-tabs-container');
     if (tabsContainer) {
-        tabsContainer.style.display = 'flex';
+        tabsContainer.style.display = (mode === 'forgot' || mode === 'reset') ? 'none' : 'flex';
     }
 
     // Toggle tab headers active state if present
@@ -3450,3 +3468,89 @@ function handleSaveCoupon(e) {
     playBeep(880, 0.15, 0);
 }
 window.handleSaveCoupon = handleSaveCoupon;
+
+// --- Forgot & Reset Password Functions ---
+function showForgotPasswordForm() {
+    showAuthMode('forgot');
+}
+window.showForgotPasswordForm = showForgotPasswordForm;
+
+async function handleForgotPasswordSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value.trim();
+    if (!email) return;
+
+    if (!isValidEmail(email)) {
+        showToast("Invalid email address format.", "danger");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast("Verification code has been sent to your email!", "success");
+            const resetEmail = document.getElementById('reset-email');
+            if (resetEmail) resetEmail.value = email;
+            showAuthMode('reset');
+        } else {
+            showToast(data.error || "Password recovery request failed.", "danger");
+        }
+    } catch (err) {
+        console.error("Forgot password error:", err);
+        showToast("Server error connecting to database.", "danger");
+    }
+}
+window.handleForgotPasswordSubmit = handleForgotPasswordSubmit;
+
+async function handleResetPasswordSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('reset-email').value.trim();
+    const token = document.getElementById('reset-token').value.trim();
+    const password = document.getElementById('reset-new-password').value;
+    const confirmPassword = document.getElementById('reset-confirm-password').value;
+
+    if (!email || !token || !password || !confirmPassword) {
+        showToast("Please fill in all reset password fields.", "danger");
+        return;
+    }
+
+    if (password.length < 6) {
+        showToast("Password must be at least 6 characters long.", "danger");
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showToast("Confirm password does not match the new password.", "danger");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, token, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast("Password updated successfully! Please sign in.", "success");
+            showAuthMode('signin');
+            
+            // Clear fields
+            document.getElementById('reset-email').value = '';
+            document.getElementById('reset-token').value = '';
+            document.getElementById('reset-new-password').value = '';
+            document.getElementById('reset-confirm-password').value = '';
+        } else {
+            showToast(data.error || "Password reset failed.", "danger");
+        }
+    } catch (err) {
+        console.error("Reset password error:", err);
+        showToast("Server connection error during reset.", "danger");
+    }
+}
+window.handleResetPasswordSubmit = handleResetPasswordSubmit;

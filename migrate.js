@@ -115,6 +115,13 @@ CREATE TABLE IF NOT EXISTS admin_settings (
     value TEXT NOT NULL,
     description TEXT
 );
+
+-- 10. Password Resets Table
+CREATE TABLE IF NOT EXISTS password_resets (
+    email VARCHAR(100) PRIMARY KEY,
+    token VARCHAR(100) NOT NULL,
+    expires_at TIMESTAMP NOT NULL
+);
 `;
 
 const seedSql = `

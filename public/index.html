@@ -764,8 +764,10 @@
                                     required>
                             </div>
                             <div class="space-y-1">
-                                <label
-                                    class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                <div class="flex justify-between items-center">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                    <button type="button" onclick="showForgotPasswordForm()" class="text-[10px] font-bold text-secondary hover:underline">Forgot Password?</button>
+                                </div>
                                 <div class="relative">
                                     <input type="password" id="signin-password" placeholder="••••••••"
                                         class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
@@ -859,6 +861,80 @@
                                 class="w-full bg-secondary hover:bg-secondary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
                                 Access Console
                                 <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+
+                        <!-- FORGOT PASSWORD FORM -->
+                        <form id="forgot-password-form" onsubmit="handleForgotPasswordSubmit(event)" class="space-y-4"
+                            style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Forgot Password</h3>
+                            <p class="text-xs text-gray-500 mb-4">Enter your registered email address, and we'll email you a password reset code.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email Address</label>
+                                <input type="email" id="forgot-email" placeholder="name@domain.com"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Send Reset Link & Code
+                                <span class="material-symbols-outlined text-sm">mail</span>
+                            </button>
+                            <button type="button" onclick="showAuthMode('signin')"
+                                class="w-full text-center text-xs font-bold text-primary hover:underline block pt-2">
+                                Back to Sign In
+                            </button>
+                        </form>
+
+                        <!-- RESET PASSWORD FORM -->
+                        <form id="reset-password-form" onsubmit="handleResetPasswordSubmit(event)" class="space-y-4"
+                            style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Reset Password</h3>
+                            <p class="text-xs text-gray-500 mb-4">Set a secure new password for your account.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email Address</label>
+                                <input type="email" id="reset-email" placeholder="name@domain.com"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">6-Digit Reset Code</label>
+                                <input type="text" id="reset-token" placeholder="e.g. 123456"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">New Password</label>
+                                <div class="relative">
+                                    <input type="password" id="reset-new-password" placeholder="••••••••"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
+                                        required>
+                                    <button type="button" onclick="togglePasswordVisibility('reset-new-password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Confirm Password</label>
+                                <div class="relative">
+                                    <input type="password" id="reset-confirm-password" placeholder="••••••••"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
+                                        required>
+                                    <button type="button" onclick="togglePasswordVisibility('reset-confirm-password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-secondary hover:bg-secondary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Save New Password
+                                <span class="material-symbols-outlined text-sm">lock_reset</span>
+                            </button>
+                            <button type="button" onclick="showAuthMode('signin')"
+                                class="w-full text-center text-xs font-bold text-primary hover:underline block pt-2">
+                                Cancel
                             </button>
                         </form>
                     </div>
