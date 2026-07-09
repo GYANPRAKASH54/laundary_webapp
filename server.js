@@ -238,10 +238,9 @@ app.post('/api/admin/valets', async (req, res) => {
             'INSERT INTO valets (name, phone, vehicle_num, status) VALUES (?, ?, ?, ?)',
             [name, phone, vehicle_num || '', 'active']
         );
-        // Also register in users table with role 'valet' so they can log in
         await dbRun(
             'INSERT INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, ?)',
-            [name, phone, `${phone.replace(/\s+/g, '')}@luxeclean.com`, password, 'valet']
+            [name, phone, `${phone.replace(/\s+/g, '')}@369laundry.com`, password, 'valet']
         );
         res.status(201).json({ success: true });
     } catch (err) {
@@ -551,7 +550,7 @@ async function sendMockEmail(order, type) {
     // Generate dynamic UPI Scan-to-Pay QR code block if billing is active and payment is UPI
     let qrSectionHtml = '';
     if (orderPayment === 'upi' && orderAmount > 0) {
-        const upiUrl = `upi://pay?pa=luxeclean@upi&pn=LuxeClean&am=${orderAmount.toFixed(2)}&cu=INR&tn=Order-${orderId}`;
+        const upiUrl = `upi://pay?pa=369laundry@upi&pn=369%20Laundry&am=${orderAmount.toFixed(2)}&cu=INR&tn=Order-${orderId}`;
         const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(upiUrl)}`;
         
         qrSectionHtml = `
@@ -571,15 +570,15 @@ async function sendMockEmail(order, type) {
     const emailHeader = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #c2c7cd; border-radius: 12px; background-color: #ffffff; color: #001726;">
             <div style="text-align: center; border-bottom: 2px solid #7b5800; padding-bottom: 15px; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #001726; font-size: 24px; letter-spacing: -0.5px;">Washing Basket</h2>
+                <h2 style="margin: 0; color: #001726; font-size: 24px; letter-spacing: -0.5px;">369 Laundry</h2>
                 <p style="margin: 5px 0 0 0; font-size: 12px; color: #72787e;">Order Status Update & Delivery Receipt</p>
             </div>
     `;
 
     const emailFooter = `
             <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #c2c7cd; text-align: center; font-size: 11px; color: #72787e;">
-                <p style="margin: 0;">Washing Basket Automated Mailer. Please do not reply directly to this email.</p>
-                <p style="margin: 5px 0 0 0;">© 2026 WashingBasket.in Inc. All rights reserved.</p>
+                <p style="margin: 0;">369 Laundry Automated Mailer. Please do not reply directly to this email.</p>
+                <p style="margin: 5px 0 0 0;">© 2026 369laundry.com Inc. All rights reserved.</p>
             </div>
         </div>
     `;
@@ -590,7 +589,7 @@ async function sendMockEmail(order, type) {
             body = `
                 ${emailHeader}
                 <p>Hello <strong>${customerName}</strong>,</p>
-                <p>Thank you for choosing Washing Basket. We have received your booking and a valet will arrive at your scheduled time slot.</p>
+                <p>Thank you for choosing 369 Laundry. We have received your booking and a valet will arrive at your scheduled time slot.</p>
                 <div style="background-color: #f8fafc; border-radius: 8px; padding: 15px; margin: 20px 0;">
                     <h3 style="margin-top: 0; color: #0f172a; font-size: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 5px;">Booking Details</h3>
                     <p style="margin: 5px 0; font-size: 13px;"><strong>Order Reference:</strong> ${orderId}</p>
@@ -604,7 +603,7 @@ async function sendMockEmail(order, type) {
             break;
         case 'weighed_processing':
         case 'processing':
-            subject = `Washing Basket Weigh-In Complete: Order #${orderId}`;
+            subject = `369 Laundry Weigh-In Complete: Order #${orderId}`;
             body = `
                 ${emailHeader}
                 <p>Hello <strong>${customerName}</strong>,</p>
@@ -648,7 +647,7 @@ async function sendMockEmail(order, type) {
             `;
             break;
         case 'delivered':
-            subject = `Washing Basket Transaction Receipt: Order #${orderId}`;
+            subject = `369 Laundry Transaction Receipt: Order #${orderId}`;
             body = `
                 ${emailHeader}
                 <p>Hello <strong>${customerName}</strong>,</p>
@@ -675,7 +674,7 @@ async function sendMockEmail(order, type) {
             `;
             break;
         case 'payment_reminder':
-            subject = `Washing Basket Invoice: Payment Reminder (Ref: ${orderId})`;
+            subject = `369 Laundry Invoice: Payment Reminder (Ref: ${orderId})`;
             body = `
                 ${emailHeader}
                 <p>Hello <strong>${customerName}</strong>,</p>
@@ -713,7 +712,7 @@ async function sendMockEmail(order, type) {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        from: 'Washing Basket <onboarding@resend.dev>', // Standard onboarding sandbox sender
+                        from: '369 Laundry <onboarding@resend.dev>', // Standard onboarding sandbox sender
                         to: customerEmail,
                         subject: subject,
                         html: body
@@ -747,7 +746,7 @@ function openBrowser(url) {
 // Start listening conditionally (avoid listening in serverless Vercel environment)
 if (!process.env.VERCEL) {
     app.listen(PORT, () => {
-        console.log(`LuxeClean backend server is listening on port ${PORT}`);
+        console.log(`369 Laundry backend server is listening on port ${PORT}`);
         console.log(`Web application is live at http://localhost:${PORT}`);
         openBrowser(`http://localhost:${PORT}`);
     });

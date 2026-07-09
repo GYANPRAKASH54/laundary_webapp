@@ -160,7 +160,7 @@ const dbGet = (sql, params = []) => {
 
         if (!db) {
             if (sql.includes("FROM users WHERE phone = ?") && params[0] === 'admin') {
-                resolve({ name: 'Admin Manager', phone: 'admin', email: 'admin@luxeclean.com', password: 'ADMIN123', role: 'admin' });
+                resolve({ name: 'Admin Manager', phone: 'admin', email: 'admin@369laundry.com', password: 'ADMIN123', role: 'admin' });
             } else {
                 resolve(null);
             }
@@ -392,7 +392,7 @@ const seedMockData = async () => {
         
         const adminName = process.env.ADMIN_NAME || 'Admin Manager';
         const adminPhone = process.env.ADMIN_PHONE || 'admin';
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@luxeclean.com';
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@369laundry.com';
         const adminPassword = process.env.ADMIN_PASSWORD || 'ADMIN123';
 
         // Always seed/verify default Admin account

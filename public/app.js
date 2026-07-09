@@ -1,4 +1,4 @@
-// LuxeClean Web Application - Frontend Controller & Audio Synthesizer
+// 369 Laundry Web Application - Frontend Controller & Audio Synthesizer
 
 // Core State
 let currentUser = null;
@@ -199,7 +199,7 @@ function switchTab(tabName) {
     
     if (title && subtitle) {
         if (targetPanel === 'landing') {
-            title.innerText = "LuxeClean Overview";
+            title.innerText = "369 Laundry Overview";
             subtitle.innerText = "Experience automated laundry tracking with instant WhatsApp and Email updates.";
         } else if (targetPanel === 'customer') {
             title.innerText = "Customer Dashboard";
@@ -235,7 +235,7 @@ async function checkBackendConnection() {
     try {
         const response = await fetch(`${API_BASE}/orders?role=admin`);
         if (response.ok) {
-            console.log("Connected to LuxeClean Backend Server.");
+            console.log("Connected to 369 Laundry Backend Server.");
             useLocalFallback = false;
         } else {
             throw new Error();
@@ -532,7 +532,7 @@ async function handleSignInSubmit(e) {
                 "+91 99999 88888": "Rahul Sharma"
             };
             const custName = seedCusts[phone] || "Offline Customer";
-            applyLoginState({ name: custName, phone, email: "offline@luxeclean.com", role: "customer" });
+            applyLoginState({ name: custName, phone, email: "offline@369laundry.com", role: "customer" });
             showToast("Signed in successfully (Simulated memory mode)", "success");
         }
     }
@@ -555,7 +555,7 @@ async function handleSignUpSubmit(e) {
             const data = await res.json();
             if (res.ok && data.success) {
                 applyLoginState(data.user);
-                showToast(`Registration complete. Welcome to LuxeClean, ${name}!`, 'success');
+                showToast(`Registration complete. Welcome to 369 Laundry, ${name}!`, 'success');
             } else {
                 showToast(data.error || "Sign Up failed", "danger");
                 playBeep(220, 0.25, 0); 
@@ -599,7 +599,7 @@ async function handleAdminLoginSubmit(e) {
         }
     } else {
         if ((phone === 'admin' || phone === '8210895737') && password === 'ADMIN123') {
-            applyLoginState({ name: "Admin Manager", phone: phone, email: "admin@luxeclean.com", role: "admin" });
+            applyLoginState({ name: "Admin Manager", phone: phone, email: "admin@369laundry.com", role: "admin" });
             showToast("Admin authenticated successfully (Simulated memory mode)", "success");
             switchTab('admin');
         } else {
@@ -2075,28 +2075,28 @@ function triggerWhatsAppAPI(order, templateType) {
 
     switch (templateType) {
         case 'order_confirmation':
-            messageText = `*LuxeClean Confirmation*\nHi ${order.customerName}, your laundry pickup is confirmed!\nOrder ID: *${order.orderId}*\nDate: ${order.date}\nSlot: ${order.slot}\nTotal Bill: ${billString}\n\nTrack order here: https://luxeclean.app/track/${order.orderId}`;
+            messageText = `*369 Laundry Confirmation*\nHi ${order.customerName}, your laundry pickup is confirmed!\nOrder ID: *${order.orderId}*\nDate: ${order.date}\nSlot: ${order.slot}\nTotal Bill: ${billString}\n\nTrack order here: https://369laundry.app/track/${order.orderId}`;
             break;
         case 'pickup_scheduled':
-            messageText = `*LuxeClean Update*\nValet assigned to pick up your laundry for Order *${order.orderId}*.\nDriver Contact: +91 90000 11111.\nEnsure clothes are sorted in the bag.`;
+            messageText = `*369 Laundry Update*\nValet assigned to pick up your laundry for Order *${order.orderId}*.\nDriver Contact: +91 90000 11111.\nEnsure clothes are sorted in the bag.`;
             break;
         case 'picked_up':
-            messageText = `*LuxeClean Alert*\nYour laundry has arrived at our state-of-the-art washing facility.\nOrder ID: *${order.orderId}*\nWe are currently weighing and inspecting your clothes. Bill details will follow instantly!`;
+            messageText = `*369 Laundry Alert*\nYour laundry has arrived at our state-of-the-art washing facility.\nOrder ID: *${order.orderId}*\nWe are currently weighing and inspecting your clothes. Bill details will follow instantly!`;
             break;
         case 'processing':
-            messageText = `*LuxeClean Weigh-In Complete!*\nWashing cycles have started for your order *${order.orderId}*.\nWeight: *${order.weight} kg*\nFinal Bill: *₹${order.amount.toFixed(2)}*\nYour clothes are tumbling nicely in the drum! Watch it live in the dashboard.`;
+            messageText = `*369 Laundry Weigh-In Complete!*\nWashing cycles have started for your order *${order.orderId}*.\nWeight: *${order.weight} kg*\nFinal Bill: *₹${order.amount.toFixed(2)}*\nYour clothes are tumbling nicely in the drum! Watch it live in the dashboard.`;
             break;
         case 'ready':
-            messageText = `*LuxeClean Finished*\nOrder *${order.orderId}* is clean, ironed, and packaged.\nReady for dispatch. Delivery scheduled soon.`;
+            messageText = `*369 Laundry Finished*\nOrder *${order.orderId}* is clean, ironed, and packaged.\nReady for dispatch. Delivery scheduled soon.`;
             break;
         case 'out_for_delivery':
-            messageText = `*LuxeClean Out For Delivery*\nHi ${order.customerName}, your laundry is on the way!\nOrder ID: *${order.orderId}*\nTotal Due: *₹${order.amount.toFixed(2)}*\nHave your digital QR code ready for verification.`;
+            messageText = `*369 Laundry Out For Delivery*\nHi ${order.customerName}, your laundry is on the way!\nOrder ID: *${order.orderId}*\nTotal Due: *₹${order.amount.toFixed(2)}*\nHave your digital QR code ready for verification.`;
             break;
         case 'delivered':
-            messageText = `*LuxeClean Transaction Completed*\nThank you for using LuxeClean, ${order.customerName}.\nOrder *${order.orderId}* has been successfully delivered and paid.\nRate us: https://luxeclean.app/feedback`;
+            messageText = `*369 Laundry Transaction Completed*\nThank you for using 369 Laundry, ${order.customerName}.\nOrder *${order.orderId}* has been successfully delivered and paid.\nRate us: https://369laundry.app/feedback`;
             break;
         case 'order_cancelled':
-            messageText = `*LuxeClean Cancellation Alert*\nHi ${order.customerName}, your order *${order.orderId}* has been successfully cancelled.\nRefund will be initiated if already charged.`;
+            messageText = `*369 Laundry Cancellation Alert*\nHi ${order.customerName}, your order *${order.orderId}* has been successfully cancelled.\nRefund will be initiated if already charged.`;
             break;
     }
 

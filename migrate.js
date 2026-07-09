@@ -1,4 +1,4 @@
-// LuxeClean Professional Database Migration & Seeding Script
+// 369 Laundry Professional Database Migration & Seeding Script
 require('dotenv').config();
 const { Client } = require('pg');
 
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS admin_settings (
 const seedSql = `
 -- Seed default Admin account if it doesn't exist
 INSERT INTO users (name, phone, email, password, role) 
-VALUES ('Admin Manager', 'admin', 'admin@luxeclean.com', 'ADMIN123', 'admin')
+VALUES ('Admin Manager', 'admin', 'admin@369laundry.com', 'ADMIN123', 'admin')
 ON CONFLICT (phone) DO NOTHING;
 
 -- Seed default Customer accounts
@@ -133,7 +133,7 @@ ON CONFLICT (phone) DO NOTHING;
 
 -- Seed default Settings
 INSERT INTO admin_settings (key, value, description) VALUES
-('business_name', 'LuxeClean Valet', 'Official Laundry business title'),
+('business_name', '369 Laundry Valet', 'Official Laundry business title'),
 ('min_free_delivery', '500', 'Minimum order amount for free valet pickup (INR)')
 ON CONFLICT (key) DO NOTHING;
 `;

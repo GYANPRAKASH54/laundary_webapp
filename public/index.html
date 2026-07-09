@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Washing Basket | Dashboard</title>
+    <title>369 Laundry | Dashboard</title>
     <!-- Google Fonts: Outfit for headings, Inter for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -102,11 +102,11 @@
         <nav class="flex justify-between items-center px-6 md:px-12 py-4 max-w-7xl mx-auto">
             <!-- Logo area -->
             <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('landing')">
-                <img src="components/screen_logo.png" class="h-9 w-auto">
+                <img src="components/Brand_Logo.PNG" class="h-10 md:h-12 w-auto object-contain rounded-lg border border-blue-50/80 shadow-sm transition-all duration-300 hover:scale-[1.03]">
             </div>
 
             <!-- Navigation Links -->
-            <div class="hidden md:flex items-center gap-8 nav-menu">
+            <div class="hidden md:flex items-center gap-3 lg:gap-8 nav-menu">
                 <a href="#services" onclick="switchTab('landing')"
                     class="nav-btn py-1 font-body-md text-on-surface-variant hover:text-secondary transition-colors"
                     data-tab="landing">Overview</a>
@@ -130,7 +130,7 @@
             </div>
 
             <!-- Login / Signup / Logout Area -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 lg:gap-4">
                 <!-- Guest controls -->
                 <div id="nav-btn-gate" class="flex items-center gap-2">
                     <button onclick="showAuthMode('signin')"
@@ -141,10 +141,10 @@
                 </div>
 
                 <!-- Logged In profile controls -->
-                <div id="nav-logout-btn" style="display: none;" class="items-center gap-4">
+                <div id="nav-logout-btn" style="display: none;" class="items-center gap-2 lg:gap-4">
                     <div id="profile-indicator"
                         onclick="currentUser.role === 'admin' ? switchTab('admin') : switchTab('customer')"
-                        class="flex items-center gap-3 bg-surface-container-low border border-primary/20 px-4 py-1.5 rounded-full cursor-pointer hover:bg-white transition-all">
+                        class="flex items-center gap-2 lg:gap-3 bg-surface-container-low border border-primary/20 px-3 py-1 lg:px-4 lg:py-1.5 rounded-full cursor-pointer hover:bg-white transition-all">
                         <div class="flex flex-col text-left">
                             <span class="text-xs font-bold text-primary profile-name">Guest Mode</span>
                             <span class="text-[9px] text-gray-500 profile-role uppercase">Viewer Mode</span>
@@ -216,7 +216,7 @@
                                     class="material-symbols-outlined text-status-completed text-lg">local_laundry_service</span>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 font-bold">LuxeClean Care</p>
+                                <p class="text-xs text-gray-500 font-bold">369 Laundry Care</p>
                                 <p class="font-bold text-primary text-[10px] uppercase tracking-wider">Active Cycle</p>
                             </div>
                         </div>
@@ -430,33 +430,41 @@
                                 <div id="basket-items-container" class="space-y-2 max-h-48 overflow-y-auto">
                                     <!-- Dynamically filled -->
                                 </div>
-                                
+
                                 <!-- Discount Coupon Field -->
                                 <div class="border-t border-gray-200 pt-3 space-y-2">
                                     <div class="flex items-center justify-between gap-2">
                                         <div class="relative flex-grow">
-                                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">sell</span>
-                                            <input type="text" id="coupon-code-input" placeholder="Enter Coupon Code (e.g. WELCOME10)" 
+                                            <span
+                                                class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">sell</span>
+                                            <input type="text" id="coupon-code-input"
+                                                placeholder="Enter Coupon Code (e.g. WELCOME10)"
                                                 class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold uppercase focus:ring-primary focus:border-primary">
                                         </div>
-                                        <button type="button" onclick="applyCoupon()" 
+                                        <button type="button" onclick="applyCoupon()"
                                             class="px-4 py-1.5 bg-primary text-white font-bold text-xs rounded-lg hover:bg-opacity-95 transition-all">
                                             Apply
                                         </button>
                                     </div>
                                     <!-- Success coupon feedback -->
-                                    <div id="coupon-success-msg" class="text-[11px] font-bold text-emerald-600 flex items-center gap-1" style="display: none;">
+                                    <div id="coupon-success-msg"
+                                        class="text-[11px] font-bold text-emerald-600 flex items-center gap-1"
+                                        style="display: none;">
                                         <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                                        Coupon <span id="applied-coupon-name" class="underline"></span> applied successfully! Saved <span id="applied-coupon-discount"></span>
+                                        Coupon <span id="applied-coupon-name" class="underline"></span> applied
+                                        successfully! Saved <span id="applied-coupon-discount"></span>
                                     </div>
                                 </div>
 
                                 <div class="border-t border-gray-200 pt-3 flex items-center justify-between">
                                     <div class="text-xs text-gray-500">
-                                        Estimated Weight: <span id="total-weight" class="font-bold text-primary">0.0 kg</span>
+                                        Estimated Weight: <span id="total-weight" class="font-bold text-primary">0.0
+                                            kg</span>
                                     </div>
                                     <div class="flex flex-col items-end">
-                                        <div id="original-price-row" class="text-xs text-gray-400 line-through font-semibold" style="display: none;">₹0.00</div>
+                                        <div id="original-price-row"
+                                            class="text-xs text-gray-400 line-through font-semibold"
+                                            style="display: none;">₹0.00</div>
                                         <div class="text-sm font-bold text-primary">
                                             Subtotal (incl. GST): <span id="total-price"
                                                 class="text-secondary text-base">₹0.00</span>
@@ -627,35 +635,49 @@
 
                     <!-- Right: Info Details Bento -->
                     <div class="lg:col-span-4 space-y-6">
-                        <div class="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-secondary/80 text-white p-8 rounded-3xl border border-white/10 shadow-2xl space-y-5">
+                        <div
+                            class="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-secondary/80 text-white p-8 rounded-3xl border border-white/10 shadow-2xl space-y-5">
                             <!-- Premium ambient glow orb -->
-                            <div class="absolute -right-12 -top-12 w-32 h-32 bg-secondary/20 rounded-full blur-2xl pointer-events-none"></div>
-                            
-                            <h4 class="text-xl font-heading font-extrabold text-white flex items-center gap-2.5 relative z-10">
+                            <div
+                                class="absolute -right-12 -top-12 w-32 h-32 bg-secondary/20 rounded-full blur-2xl pointer-events-none">
+                            </div>
+
+                            <h4
+                                class="text-xl font-heading font-extrabold text-white flex items-center gap-2.5 relative z-10">
                                 <span class="material-symbols-outlined text-secondary text-[24px]">verified</span>
                                 Quality Policy
                             </h4>
                             <p class="text-xs text-gray-300 leading-relaxed relative z-10">
-                                Every garment processed under LuxeClean parameters undergoes double inspect sweeps. We weigh and confirm item dimensions prior to washing.
+                                Every garment processed under 369 Laundry parameters undergoes double inspect sweeps. We
+                                weigh and confirm item dimensions prior to washing.
                             </p>
                             <div class="space-y-3 pt-2 relative z-10">
                                 <div class="flex items-start gap-3">
-                                    <div class="flex-shrink-0 w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-secondary text-xs font-bold">check</span>
+                                    <div
+                                        class="flex-shrink-0 w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
+                                        <span
+                                            class="material-symbols-outlined text-secondary text-xs font-bold">check</span>
                                     </div>
-                                    <span class="text-xs text-gray-200 leading-normal font-medium">Weight items billed on active receipt</span>
+                                    <span class="text-xs text-gray-200 leading-normal font-medium">Weight items billed
+                                        on active receipt</span>
                                 </div>
                                 <div class="flex items-start gap-3">
-                                    <div class="flex-shrink-0 w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-secondary text-xs font-bold">check</span>
+                                    <div
+                                        class="flex-shrink-0 w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
+                                        <span
+                                            class="material-symbols-outlined text-secondary text-xs font-bold">check</span>
                                     </div>
-                                    <span class="text-xs text-gray-200 leading-normal font-medium">Organic enzymes protect delicate silks</span>
+                                    <span class="text-xs text-gray-200 leading-normal font-medium">Organic enzymes
+                                        protect delicate silks</span>
                                 </div>
                                 <div class="flex items-start gap-3">
-                                    <div class="flex-shrink-0 w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-secondary text-xs font-bold">check</span>
+                                    <div
+                                        class="flex-shrink-0 w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
+                                        <span
+                                            class="material-symbols-outlined text-secondary text-xs font-bold">check</span>
                                     </div>
-                                    <span class="text-xs text-gray-200 leading-normal font-medium">Free valet pickup for orders over ₹500</span>
+                                    <span class="text-xs text-gray-200 leading-normal font-medium">Free valet pickup for
+                                        orders over ₹500</span>
                                 </div>
                             </div>
                         </div>
@@ -667,7 +689,7 @@
                             </h4>
                             <p class="text-xs text-green-700 leading-relaxed">Click below to converse directly with our
                                 scheduling and status dispatch agent.</p>
-                            <a href="https://wa.me/919000011111?text=Hi%20LuxeClean,%20I%20would%20like%20to%20schedule%20a%20laundry%20pickup."
+                            <a href="https://wa.me/919000011111?text=Hi%20369%20Laundry,%20I%20would%20like%20to%20schedule%20a%20laundry%20pickup."
                                 target="_blank"
                                 class="w-full py-2 bg-[#25D366] text-white font-bold text-center block rounded-lg text-xs hover:bg-opacity-95">
                                 Chat With Us
@@ -687,7 +709,7 @@
                     <div class="absolute inset-0 opacity-20 asymmetric-bg bg-secondary-container"></div>
                     <div class="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary-container"></div>
                     <div class="relative z-10 px-12 text-center max-w-md">
-                        <h1 class="text-4xl font-heading font-extrabold text-white mb-4">LuxeClean</h1>
+                        <h1 class="text-4xl font-heading font-extrabold text-white mb-4">369 Laundry</h1>
                         <p class="text-sm text-white opacity-80 mb-8 leading-relaxed">
                             Elevating the standard of care for your finest garments. Experience premium laundry and dry
                             cleaning with effortless precision.
@@ -1277,34 +1299,49 @@
                             <!-- Sub Panel: Coupons Manager -->
                             <div id="admin-subpanel-coupons" class="admin-subpanel hidden space-y-4">
                                 <div class="flex justify-between items-center">
-                                    <h4 class="text-sm font-heading font-extrabold text-primary flex items-center gap-2">
+                                    <h4
+                                        class="text-sm font-heading font-extrabold text-primary flex items-center gap-2">
                                         <span class="material-symbols-outlined text-secondary">sell</span>
                                         Promotional Coupons Manager
                                     </h4>
                                 </div>
-                                <form id="admin-coupon-form" class="bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-2" onsubmit="handleSaveCoupon(event)">
+                                <form id="admin-coupon-form"
+                                    class="bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-2"
+                                    onsubmit="handleSaveCoupon(event)">
                                     <input type="hidden" id="coupon-edit-index" value="-1">
                                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
                                         <div class="space-y-1">
-                                            <label class="text-[9px] font-bold text-gray-500 uppercase block">Coupon Code</label>
-                                            <input type="text" id="admin-coupon-code" placeholder="WELCOME10" class="border border-gray-200 focus:ring-primary rounded-lg py-1 px-2.5 text-xs w-full bg-white font-bold uppercase" required>
+                                            <label class="text-[9px] font-bold text-gray-500 uppercase block">Coupon
+                                                Code</label>
+                                            <input type="text" id="admin-coupon-code" placeholder="WELCOME10"
+                                                class="border border-gray-200 focus:ring-primary rounded-lg py-1 px-2.5 text-xs w-full bg-white font-bold uppercase"
+                                                required>
                                         </div>
                                         <div class="space-y-1">
-                                            <label class="text-[9px] font-bold text-gray-500 uppercase block">Discount Type</label>
-                                            <select id="admin-coupon-type" class="border border-gray-200 focus:ring-primary rounded-lg py-1 px-2.5 text-xs w-full bg-white" required>
+                                            <label class="text-[9px] font-bold text-gray-500 uppercase block">Discount
+                                                Type</label>
+                                            <select id="admin-coupon-type"
+                                                class="border border-gray-200 focus:ring-primary rounded-lg py-1 px-2.5 text-xs w-full bg-white"
+                                                required>
                                                 <option value="percent">Percentage Off (%)</option>
                                                 <option value="flat">Flat Discount (₹)</option>
                                             </select>
                                         </div>
                                         <div class="space-y-1">
-                                            <label class="text-[9px] font-bold text-gray-500 uppercase block">Discount Value</label>
-                                            <input type="number" id="admin-coupon-value" placeholder="10" min="1" step="any" class="border border-gray-200 focus:ring-primary rounded-lg py-1 px-2.5 text-xs w-full bg-white font-bold" required>
+                                            <label class="text-[9px] font-bold text-gray-500 uppercase block">Discount
+                                                Value</label>
+                                            <input type="number" id="admin-coupon-value" placeholder="10" min="1"
+                                                step="any"
+                                                class="border border-gray-200 focus:ring-primary rounded-lg py-1 px-2.5 text-xs w-full bg-white font-bold"
+                                                required>
                                         </div>
                                         <div class="flex items-end gap-1.5 pt-4">
-                                            <button type="submit" class="flex-grow py-1.5 bg-primary hover:bg-primary-container text-white text-xs font-bold rounded-lg transition-colors">
+                                            <button type="submit"
+                                                class="flex-grow py-1.5 bg-primary hover:bg-primary-container text-white text-xs font-bold rounded-lg transition-colors">
                                                 Save
                                             </button>
-                                            <button type="button" onclick="resetCouponForm()" class="py-1.5 px-3 bg-gray-200 hover:bg-gray-300 text-primary text-xs font-bold rounded-lg transition-colors">
+                                            <button type="button" onclick="resetCouponForm()"
+                                                class="py-1.5 px-3 bg-gray-200 hover:bg-gray-300 text-primary text-xs font-bold rounded-lg transition-colors">
                                                 Clear
                                             </button>
                                         </div>
@@ -1314,7 +1351,8 @@
                                 <div class="overflow-x-auto w-full max-h-[140px]">
                                     <table class="w-full text-left border-collapse text-xs">
                                         <thead>
-                                            <tr class="bg-gray-100 text-primary font-bold uppercase text-[9px] tracking-wider border-b border-gray-200">
+                                            <tr
+                                                class="bg-gray-100 text-primary font-bold uppercase text-[9px] tracking-wider border-b border-gray-200">
                                                 <th class="px-4 py-2">Code</th>
                                                 <th class="px-4 py-2">Type</th>
                                                 <th class="px-4 py-2">Value</th>
@@ -1367,7 +1405,7 @@
 
     <!-- QR Scanner Modal -->
     <div id="admin-qr-scanner-modal"
-        class="fixed inset-0 z-[1000] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        class="fixed inset-0 z-[5000] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div
             class="bg-white rounded-2xl border border-gray-100 shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -1421,7 +1459,7 @@
 
     <!-- QR Weigh-In Modal -->
     <div id="admin-qr-weigh-in-modal"
-        class="fixed inset-0 z-[1100] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        class="fixed inset-0 z-[5100] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div
             class="bg-white rounded-2xl border border-gray-100 shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -1495,24 +1533,27 @@
             <!-- Column 1: Brand & Logo -->
             <div class="space-y-4">
                 <div class="flex items-center gap-3">
-                    <img src="components/screen_logo.png" class="h-8 w-auto brightness-0 invert">
+                    <img src="components/Brand_Logo.PNG" class="h-10 w-auto object-contain rounded-lg border border-white/10 shadow-sm transition-all duration-300 hover:scale-[1.03]">
                 </div>
                 <p class="text-xs text-gray-300 leading-relaxed">
-                    Premium care for your finest garments. Bringing meticulous laundry, dry cleaning, and valet convenience directly to your doorstep.
+                    Premium care for your finest garments. Bringing meticulous laundry, dry cleaning, and valet
+                    convenience directly to your doorstep.
                 </p>
                 <div class="flex items-center gap-3 text-gray-300 text-sm">
-                    <a href="#" class="hover:text-secondary transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="hover:text-secondary transition-colors"><i
+                            class="fa-brands fa-instagram"></i></a>
                     <a href="#" class="hover:text-secondary transition-colors"><i class="fa-brands fa-facebook"></i></a>
                     <a href="#" class="hover:text-secondary transition-colors"><i class="fa-brands fa-twitter"></i></a>
                 </div>
             </div>
-            
+
             <!-- Column 2: Our Services -->
             <div class="space-y-3">
                 <h5 class="text-xs font-bold uppercase tracking-wider text-secondary">Our Services</h5>
                 <ul class="space-y-2 text-xs text-gray-300">
                     <li><a href="#services" class="hover:text-secondary transition-colors">Premium Wash & Fold</a></li>
-                    <li><a href="#services" class="hover:text-secondary transition-colors">Delicate Dry Cleaning</a></li>
+                    <li><a href="#services" class="hover:text-secondary transition-colors">Delicate Dry Cleaning</a>
+                    </li>
                     <li><a href="#services" class="hover:text-secondary transition-colors">Specialist Shoe Spa</a></li>
                     <li><a href="#services" class="hover:text-secondary transition-colors">Leather & Toy Care</a></li>
                 </ul>
@@ -1522,10 +1563,14 @@
             <div class="space-y-3">
                 <h5 class="text-xs font-bold uppercase tracking-wider text-secondary">Quick Links</h5>
                 <ul class="space-y-2 text-xs text-gray-300">
-                    <li><a href="#services" onclick="switchTab('landing')" class="hover:text-secondary transition-colors">Overview</a></li>
-                    <li><a href="#landing-booking-container" onclick="switchTab('customer-book')" class="hover:text-secondary transition-colors">Book a Valet</a></li>
-                    <li><a href="#landing-tracking-section" class="hover:text-secondary transition-colors">Track Live Order</a></li>
-                    <li><a href="#" onclick="showAuthMode('signin')" class="hover:text-secondary transition-colors">Staff Access Portal</a></li>
+                    <li><a href="#services" onclick="switchTab('landing')"
+                            class="hover:text-secondary transition-colors">Overview</a></li>
+                    <li><a href="#landing-booking-container" onclick="switchTab('customer-book')"
+                            class="hover:text-secondary transition-colors">Book a Valet</a></li>
+                    <li><a href="#landing-tracking-section" class="hover:text-secondary transition-colors">Track Live
+                            Order</a></li>
+                    <li><a href="#" onclick="showAuthMode('signin')"
+                            class="hover:text-secondary transition-colors">Staff Access Portal</a></li>
                 </ul>
             </div>
 
@@ -1539,7 +1584,8 @@
                     </li>
                     <li class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-sm text-secondary">mail</span>
-                        <a href="mailto:support@washingbasket.com" class="hover:text-secondary transition-colors">support@washingbasket.com</a>
+                        <a href="mailto:support@369laundry.com"
+                            class="hover:text-secondary transition-colors">support@369laundry.com</a>
                     </li>
                     <li class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-sm text-secondary">location_on</span>
@@ -1548,32 +1594,38 @@
                 </ul>
             </div>
         </div>
-        
+
         <!-- Bottom bar -->
         <div class="border-t border-white/10 py-6 text-center text-[10px] text-gray-400">
-            <p>© 2026 Washing Basket India Inc. All rights reserved. Meticulously designed for premium garment care.</p>
+            <p>© 2026 369 Laundry India Inc. All rights reserved. Meticulously designed for premium garment care.</p>
         </div>
     </footer>
 
     <!-- Mobile Bottom Navigation Bar (Visible only on small screens) -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200/60 z-50 px-4 py-2.5 shadow-lg flex justify-around items-center">
+    <nav
+        class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200/60 z-50 px-4 py-2.5 shadow-lg flex justify-around items-center">
         <!-- Home / Overview -->
-        <button onclick="switchTab('landing')" class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
+        <button onclick="switchTab('landing')"
+            class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
             <span class="material-symbols-outlined text-[22px]">home</span>
             <span class="text-[9px] font-bold uppercase tracking-wider">Overview</span>
         </button>
         <!-- Book Valet -->
-        <button onclick="switchTab('customer-book')" class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
+        <button onclick="switchTab('customer-book')"
+            class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
             <span class="material-symbols-outlined text-[22px]">calendar_month</span>
             <span class="text-[9px] font-bold uppercase tracking-wider">Book</span>
         </button>
         <!-- Dashboard (Hidden for guests, visible if logged in) -->
-        <button id="mobile-nav-dashboard" onclick="routeToDashboard()" class="flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors" style="display: none;">
+        <button id="mobile-nav-dashboard" onclick="routeToDashboard()"
+            class="flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors"
+            style="display: none;">
             <span class="material-symbols-outlined text-[22px]">dashboard</span>
             <span id="mobile-nav-dashboard-text" class="text-[9px] font-bold uppercase tracking-wider">Dashboard</span>
         </button>
         <!-- Auth action (Login/Logout) -->
-        <button id="mobile-nav-auth" onclick="toggleMobileAuth()" class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
+        <button id="mobile-nav-auth" onclick="toggleMobileAuth()"
+            class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
             <span id="mobile-nav-auth-icon" class="material-symbols-outlined text-[22px]">login</span>
             <span id="mobile-nav-auth-text" class="text-[9px] font-bold uppercase tracking-wider">Login</span>
         </button>

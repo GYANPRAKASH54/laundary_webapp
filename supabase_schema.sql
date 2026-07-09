@@ -1,4 +1,4 @@
--- LuxeClean Professional Enterprise-Grade Database Schema
+-- 369 Laundry Professional Enterprise-Grade Database Schema
 -- Copy-paste this SQL into your Supabase SQL Editor to create/upgrade the tables.
 
 -- 1. Create Services & Price Catalog Table
