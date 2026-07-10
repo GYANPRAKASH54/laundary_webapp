@@ -10,9 +10,15 @@ if (isPostgres) {
         connectionString: process.env.DATABASE_URL,
         ssl: {
             rejectUnauthorized: false
-        }
+        },
+        max: 2,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000
     });
-    console.log("Supabase/PostgreSQL database pool initialized.");
+    pgPool.on('error', (err) => {
+        console.error('Unexpected error on idle PostgreSQL client:', err.message);
+    });
+    console.log("Supabase/PostgreSQL database pool initialized with serverless limits.");
 }
 
 let sqlite3;
@@ -243,6 +249,12 @@ const initDb = async () => {
                     is_express BOOLEAN DEFAULT FALSE
                 )
             `);
+
+            try {
+                await dbRun("ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_express BOOLEAN DEFAULT FALSE");
+            } catch(e) {
+                console.warn("is_express column check failed:", e.message);
+            }
 
             await dbRun(`
                 CREATE TABLE IF NOT EXISTS order_items (
