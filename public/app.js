@@ -3174,6 +3174,7 @@ window.togglePasswordVisibility = togglePasswordVisibility;
 async function syncCustomersData() {
     if (useLocalFallback) {
         renderAdminCustomersTable([]);
+        renderAdminAdminsTable([]);
         return;
     }
 
@@ -3183,7 +3184,10 @@ async function syncCustomersData() {
         const users = await res.json();
         
         if (Array.isArray(users)) {
-            renderAdminCustomersTable(users);
+            const customers = users.filter(u => u.role === 'customer');
+            const admins = users.filter(u => u.role === 'admin');
+            renderAdminCustomersTable(customers);
+            renderAdminAdminsTable(admins);
         }
     } catch (e) {
         console.warn("Sync customers failed:", e.message);
@@ -3277,6 +3281,75 @@ function renderAdminCustomersTable(usersList) {
 }
 window.renderAdminCustomersTable = renderAdminCustomersTable;
 
+function renderAdminAdminsTable(adminsList) {
+    const tbody = document.getElementById('admin-admins-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    let list = adminsList;
+    if (list.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-gray-400 p-4">
+                    No administrators found in database.
+                </td>
+            </tr>`;
+        return;
+    }
+
+    list.forEach(cust => {
+        const isSelf = currentUser && currentUser.phone === cust.phone;
+        
+        let roleSelectHtml = '';
+        if (isSelf) {
+            roleSelectHtml = `
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-secondary/15 text-secondary uppercase">
+                    ${cust.role}
+                </span>
+            `;
+        } else {
+            roleSelectHtml = `
+                <select class="role-selector-dropdown border border-gray-200 rounded px-1.5 py-0.5 text-[10px] font-bold text-primary uppercase bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                        onchange="changeUserRole('${cust.phone}', this.value)">
+                    <option value="customer" ${cust.role === 'customer' ? 'selected' : ''}>Customer</option>
+                    <option value="valet" ${cust.role === 'valet' ? 'selected' : ''}>Valet</option>
+                    <option value="admin" ${cust.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            `;
+        }
+
+        let deleteBtnHtml = '';
+        if (!isSelf) {
+            deleteBtnHtml = `
+                <button class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"
+                        onclick="deleteUserAccount('${cust.phone}')">
+                    <span class="material-symbols-outlined text-[12px]">delete</span>
+                    Delete
+                </button>
+            `;
+        } else {
+            deleteBtnHtml = `<span class="text-[10px] text-gray-400 font-bold italic">Self</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-100 hover:bg-gray-50/50 transition-colors';
+        tr.innerHTML = `
+            <td class="px-4 py-3 align-middle font-bold text-primary">${cust.name}</td>
+            <td class="px-4 py-3 align-middle">
+                <div class="flex flex-col text-[11px] text-gray-500 font-sans">
+                    <span class="font-medium text-gray-700">${cust.phone}</span>
+                    <span>${cust.email}</span>
+                </div>
+            </td>
+            <td class="px-4 py-3 align-middle">${roleSelectHtml}</td>
+            <td class="px-4 py-3 align-middle">${deleteBtnHtml}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+window.renderAdminAdminsTable = renderAdminAdminsTable;
+
 async function changeUserRole(phone, newRole) {
     if (useLocalFallback) {
         showToast("Role updates require active database connection.", "warning");
@@ -3346,27 +3419,39 @@ async function deleteUserAccount(phone) {
 }
 window.deleteUserAccount = deleteUserAccount;
 
-// ADMIN SUBTAB SWITCHER (Customers / Valets)
+// ADMIN SUBTAB SWITCHER (Customers / Admins / Valets / Coupons)
 let activeAdminSubTab = 'customers';
 function switchAdminSubTab(tab) {
     activeAdminSubTab = tab;
     
     // Toggle buttons class
     const btnCust = document.getElementById('admin-subtab-btn-customers');
+    const btnAdmin = document.getElementById('admin-subtab-btn-admins');
     const btnVal = document.getElementById('admin-subtab-btn-valets');
     const btnCoup = document.getElementById('admin-subtab-btn-coupons');
     
-    if (btnCust && btnVal && btnCoup) {
+    if (btnCust) {
         btnCust.classList.toggle('bg-white', tab === 'customers');
         btnCust.classList.toggle('text-primary', tab === 'customers');
         btnCust.classList.toggle('shadow-sm', tab === 'customers');
         btnCust.classList.toggle('text-gray-500', tab !== 'customers');
-        
+    }
+    
+    if (btnAdmin) {
+        btnAdmin.classList.toggle('bg-white', tab === 'admins');
+        btnAdmin.classList.toggle('text-primary', tab === 'admins');
+        btnAdmin.classList.toggle('shadow-sm', tab === 'admins');
+        btnAdmin.classList.toggle('text-gray-500', tab !== 'admins');
+    }
+    
+    if (btnVal) {
         btnVal.classList.toggle('bg-white', tab === 'valets');
         btnVal.classList.toggle('text-primary', tab === 'valets');
         btnVal.classList.toggle('shadow-sm', tab === 'valets');
         btnVal.classList.toggle('text-gray-500', tab !== 'valets');
+    }
 
+    if (btnCoup) {
         btnCoup.classList.toggle('bg-white', tab === 'coupons');
         btnCoup.classList.toggle('text-primary', tab === 'coupons');
         btnCoup.classList.toggle('shadow-sm', tab === 'coupons');
@@ -3375,16 +3460,26 @@ function switchAdminSubTab(tab) {
     
     // Toggle subpanels display
     const panelCust = document.getElementById('admin-subpanel-customers');
+    const panelAdmin = document.getElementById('admin-subpanel-admins');
     const panelVal = document.getElementById('admin-subpanel-valets');
     const panelCoup = document.getElementById('admin-subpanel-coupons');
     
-    if (panelCust && panelVal && panelCoup) {
+    if (panelCust) {
         panelCust.classList.toggle('hidden', tab !== 'customers');
         panelCust.classList.toggle('active', tab === 'customers');
-        
+    }
+    
+    if (panelAdmin) {
+        panelAdmin.classList.toggle('hidden', tab !== 'admins');
+        panelAdmin.classList.toggle('active', tab === 'admins');
+    }
+    
+    if (panelVal) {
         panelVal.classList.toggle('hidden', tab !== 'valets');
         panelVal.classList.toggle('active', tab === 'valets');
+    }
 
+    if (panelCoup) {
         panelCoup.classList.toggle('hidden', tab !== 'coupons');
         panelCoup.classList.toggle('active', tab === 'coupons');
     }
@@ -3447,11 +3542,46 @@ function renderAdminValetsTable(valetsList) {
                     ${valet.status}
                 </span>
             </td>
+            <td class="px-4 py-2 align-middle font-sans">
+                <button class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"
+                        onclick="deleteValetAccount('${valet.phone}')">
+                    <span class="material-symbols-outlined text-[12px]">delete</span>
+                    Delete
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 window.renderAdminValetsTable = renderAdminValetsTable;
+
+async function deleteValetAccount(phone) {
+    if (useLocalFallback) {
+        showToast("Valet deletion requires active database connection.", "warning");
+        return;
+    }
+
+    if (!confirm("WARNING: Are you sure you want to delete this valet staff profile? This will permanently delete their account and staff associations.")) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/users/${encodeURIComponent(phone)}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast("Valet staff deleted successfully.", "success");
+            await syncValetsData();
+        } else {
+            showToast(data.error || "Failed to delete valet staff profile", "danger");
+        }
+    } catch (err) {
+        console.error("Delete valet error:", err);
+        showToast("Error deleting valet staff.", "danger");
+    }
+}
+window.deleteValetAccount = deleteValetAccount;
 
 async function handleAddValetSubmit(e) {
     e.preventDefault();
