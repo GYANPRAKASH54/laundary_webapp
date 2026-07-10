@@ -104,6 +104,9 @@
                 <a href="#landing-booking-container" onclick="switchTab('customer-book')"
                     class="nav-btn py-1 font-body-md text-on-surface-variant hover:text-secondary transition-colors"
                     data-tab="customer-book">Book Valet</a>
+                <a href="#" onclick="switchTab('contact')"
+                    class="nav-btn py-1 font-body-md text-on-surface-variant hover:text-secondary transition-colors"
+                    data-tab="contact">Contact</a>
 
                 <!-- Customer Sub menu (Toggled on customer login) -->
                 <div id="nav-customer-menu" style="display: none;" class="items-center gap-8">
@@ -1531,6 +1534,109 @@
                 </div>
             </div>
         </section>
+        <!-- 5. CONTACT US PANEL -->
+        <section class="tab-panel text-primary" id="panel-contact">
+            <div class="max-w-7xl mx-auto px-6 md:px-12 py-10 space-y-8">
+                <!-- Title headers -->
+                <div>
+                    <h1 class="text-3xl font-heading font-extrabold text-primary">Contact 369 Laundry</h1>
+                    <p class="text-sm text-gray-500 mt-1">Get in touch with our operations desk, check opening hours, or locate our facility.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    <!-- Left Columns: Contact Information Bento -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <!-- Opening Hours Card -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0">
+                                <span class="material-symbols-outlined text-[22px]">schedule</span>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-primary">Opening Hours</h4>
+                                <p class="text-xs text-gray-500 mt-1">Visit us or schedule pickups during these times:</p>
+                                <p class="text-sm font-extrabold text-secondary mt-2">Daily: 5:00 PM - 11:00 PM</p>
+                            </div>
+                        </div>
+
+                        <!-- Address Card -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0">
+                                <span class="material-symbols-outlined text-[22px]">location_on</span>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-primary">Our Facility Address</h4>
+                                <p class="text-xs text-gray-500 mt-1">Punjab Central Hub:</p>
+                                <p class="text-xs font-bold text-primary mt-2 leading-relaxed">
+                                    Law Gate Rd, Near Apna Chai Wala, Maheru, Phagwara, Punjab 144411
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Call & Email Cards Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <!-- Call Card -->
+                            <a href="tel:+918699013959" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 hover:border-secondary transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0 group-hover:bg-secondary/20 transition-all">
+                                    <span class="material-symbols-outlined text-[22px]">call</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Call Hotline</h4>
+                                    <p class="text-sm font-extrabold text-primary mt-1">+91 8699013959</p>
+                                </div>
+                            </a>
+
+                            <!-- Email Card -->
+                            <a href="mailto:support@369laundry.com" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 hover:border-secondary transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0 group-hover:bg-secondary/20 transition-all">
+                                    <span class="material-symbols-outlined text-[22px]">mail</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Email Us</h4>
+                                    <p class="text-xs font-extrabold text-primary mt-2 break-all">support@369laundry.com</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Columns: Inquiry/Message Form -->
+                    <div class="lg:col-span-7 bg-white p-8 rounded-2xl shadow-md border border-gray-100">
+                        <h3 class="text-lg font-heading font-extrabold text-primary mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary">send</span>
+                            Drop Us a Message
+                        </h3>
+                        <form onsubmit="handleContactSubmit(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Full Name</label>
+                                    <input type="text" id="contact-name" placeholder="e.g. Rahul Sharma"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm" required>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email Address</label>
+                                    <input type="email" id="contact-email" placeholder="name@domain.com"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm" required>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Subject</label>
+                                <input type="text" id="contact-subject" placeholder="How can we help you?"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm" required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Message Details</label>
+                                <textarea id="contact-message" placeholder="Type your message here..." rows="4"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm" required></textarea>
+                            </div>
+                            <button type="submit"
+                                class="w-full py-3.5 bg-primary hover:bg-primary-container text-white rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2">
+                                Send Inquiry
+                                <span class="material-symbols-outlined text-sm">send</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Global Floating Toasts -->
@@ -1823,8 +1929,24 @@
         </div>
 
         <!-- Bottom bar -->
-        <div class="border-t border-white/10 py-6 text-center text-[10px] text-gray-400">
-            <p>© 2026 369 Laundry India Inc. All rights reserved. Meticulously designed for premium garment care.</p>
+        <div class="border-t border-white/10 py-6 text-gray-400 text-[11px] flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-1">
+                <span>Developed by <a href="#" class="text-secondary font-bold hover:underline">Teqtive</a>.</span>
+            </div>
+            <div class="flex flex-wrap justify-center gap-6">
+                <a href="#" class="hover:text-secondary transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px]">gavel</span>
+                    Terms & Conditions
+                </a>
+                <a href="#" class="hover:text-secondary transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px]">security</span>
+                    Privacy Policy
+                </a>
+                <a href="#" class="hover:text-secondary transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px]">currency_exchange</span>
+                    Refund Policy
+                </a>
+            </div>
         </div>
     </footer>
 
@@ -1842,6 +1964,12 @@
             class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
             <span class="material-symbols-outlined text-[22px]">calendar_month</span>
             <span class="text-[9px] font-bold uppercase tracking-wider">Book</span>
+        </button>
+        <!-- Contact Us -->
+        <button onclick="switchTab('contact')"
+            class="flex flex-col items-center gap-0.5 text-gray-500 hover:text-secondary focus:outline-none transition-colors">
+            <span class="material-symbols-outlined text-[22px]">contact_support</span>
+            <span class="text-[9px] font-bold uppercase tracking-wider">Contact</span>
         </button>
         <!-- Dashboard (Hidden for guests, visible if logged in) -->
         <button id="mobile-nav-dashboard" onclick="routeToDashboard()"

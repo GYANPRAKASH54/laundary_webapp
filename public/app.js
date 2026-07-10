@@ -203,6 +203,8 @@ function switchTab(tabName) {
         targetPanel = 'customer';
     } else if (tabName === 'admin') {
         targetPanel = 'admin';
+    } else if (tabName === 'contact') {
+        targetPanel = 'contact';
     }
 
     // Special handling for scrolling to sections on landing page
@@ -252,6 +254,9 @@ function switchTab(tabName) {
             const isValet = currentUser && currentUser.role === 'valet';
             title.innerText = isValet ? "Valet Logistical Console" : "Admin Operations Center";
             subtitle.innerText = isValet ? "Scan customer tickets, update laundry stages, and weigh bookings." : "Track operational statuses, dispatch drivers, and view financials.";
+        } else if (targetPanel === 'contact') {
+            title.innerText = "Contact Us";
+            subtitle.innerText = "Check our opening hours, office address, or drop us an email.";
         }
     }
 
@@ -3875,3 +3880,11 @@ async function handleResetPasswordSubmit(e) {
     }
 }
 window.handleResetPasswordSubmit = handleResetPasswordSubmit;
+
+function handleContactSubmit(e) {
+    e.preventDefault();
+    const name = document.getElementById('contact-name').value;
+    showToast(`Thank you, ${name}! Your inquiry has been sent to support.`, 'success');
+    e.target.reset();
+}
+window.handleContactSubmit = handleContactSubmit;
