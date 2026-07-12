@@ -15,11 +15,5 @@
       "memory": 1024,
       "maxDuration": 15
     }
-  },
-  "crons": [
-    {
-      "path": "/api/ping",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  }
 }
