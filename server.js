@@ -5,7 +5,6 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { exec } = require('child_process');
 const { initDb, dbRun, dbAll, dbGet } = require('./db');
-const { clerkMiddleware, getAuth, clerkClient } = require('@clerk/express');
 
 const compression = require('compression');
 
@@ -61,57 +60,22 @@ function verifyPassword(password, storedPassword) {
     return hash === originalHash;
 }
 
-// Request authentication middleware using Clerk
-async function authenticateToken(req, res, next) {
-    const auth = getAuth(req);
-    if (!auth.userId) {
-        return res.status(401).json({ error: 'Access denied: Authentication required.' });
+// Request authentication middleware
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Access denied: Authentication token required.' });
     }
     
-    try {
-        let user = await dbGet('SELECT * FROM users WHERE clerk_user_id = ?', [auth.userId]);
-        if (!user) {
-            // Fetch user profile details from Clerk
-            const clerkUser = await clerkClient.users.getUser(auth.userId);
-            const phone = clerkUser.phoneNumbers && clerkUser.phoneNumbers.length > 0 
-                ? normalizePhoneNumber(clerkUser.phoneNumbers[0].phoneNumber) 
-                : null;
-            const email = clerkUser.emailAddresses && clerkUser.emailAddresses.length > 0 
-                ? clerkUser.emailAddresses[0].emailAddress.toLowerCase().trim() 
-                : null;
-                
-            if (phone) {
-                user = await dbGet('SELECT * FROM users WHERE phone = ?', [phone]);
-            }
-            if (!user && email) {
-                user = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
-            }
-            
-            if (user) {
-                // Link this user with clerk_user_id
-                await dbRun('UPDATE users SET clerk_user_id = ? WHERE id = ?', [auth.userId, user.id]);
-                user = await dbGet('SELECT * FROM users WHERE id = ?', [user.id]);
-            } else {
-                // Auto register new customer
-                const name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'Clerk User';
-                const finalPhone = phone || `clerk_${auth.userId}`;
-                const finalEmail = email || `${auth.userId}@clerk-user.com`;
-                const dummyPassword = hashPassword(auth.userId);
-                
-                await dbRun(
-                    'INSERT INTO users (name, phone, email, password, role, clerk_user_id) VALUES (?, ?, ?, ?, ?, ?)',
-                    [name, finalPhone, finalEmail, dummyPassword, 'customer', auth.userId]
-                );
-                user = await dbGet('SELECT * FROM users WHERE clerk_user_id = ?', [auth.userId]);
-            }
-        }
-        
-        req.user = user;
-        next();
-    } catch (err) {
-        console.error('Authentication helper error:', err.message);
-        return res.status(500).json({ error: 'Database/Auth error occurred' });
+    const decoded = verifyToken(token);
+    if (!decoded) {
+        return res.status(403).json({ error: 'Access denied: Invalid or expired token.' });
     }
+    
+    req.user = decoded;
+    next();
 }
 
 // Role restriction middleware
@@ -136,9 +100,6 @@ const PORT = process.env.PORT || 3000;
 // Enable CORS and JSON parsing
 app.use(cors());
 app.use(bodyParser.json());
-
-// Enable Clerk authentication middleware
-app.use(clerkMiddleware());
 
 // Enable Brotli/Gzip compression middleware for optimized asset transmission
 app.use(compression());
@@ -278,15 +239,6 @@ function isValidEmail(email) {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return re.test(String(email).toLowerCase().trim());
 }
-
-// 0. CLERK CONFIGURATION & METRICS
-app.get('/api/auth/config', (req, res) => {
-    res.json({ publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '' });
-});
-
-app.get('/api/auth/me', authenticateToken, (req, res) => {
-    res.json({ success: true, user: req.user });
-});
 
 // 1. AUTHENTICATION: SIGN UP
 app.post('/api/auth/signup', async (req, res) => {

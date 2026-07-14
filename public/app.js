@@ -41,22 +41,11 @@ let useLocalFallback = false;
 (function() {
     const originalFetch = window.fetch;
     window.fetch = async function(url, options) {
-        if (typeof url === 'string' && url.includes(API_BASE) && !url.includes('/auth/config')) {
+        if (typeof url === 'string' && url.includes(API_BASE) && !url.includes('/auth/')) {
             options = options || {};
             options.headers = options.headers || {};
             
-            let token = null;
-            if (window.Clerk && window.Clerk.session) {
-                try {
-                    token = await window.Clerk.session.getToken();
-                } catch (e) {
-                    console.warn("Failed to retrieve token from Clerk:", e.message);
-                }
-            }
-            if (!token) {
-                token = localStorage.getItem('369laundary_token');
-            }
-            
+            const token = localStorage.getItem('369laundary_token');
             if (token) {
                 if (options.headers instanceof Headers) {
                     options.headers.set('Authorization', `Bearer ${token}`);
@@ -73,7 +62,7 @@ let useLocalFallback = false;
             }
         }
         const res = await originalFetch(url, options);
-        if (res.status === 401 && typeof url === 'string' && url.includes(API_BASE) && !url.includes('/auth/config')) {
+        if (res.status === 401 && typeof url === 'string' && url.includes(API_BASE) && !url.includes('/auth/')) {
             console.warn("Session token expired or invalid. Clearing session.");
             showToast("Session expired. Please log in again.", "danger");
             if (typeof handleLogout === 'function') {
@@ -156,81 +145,6 @@ const priceCatalog = {
     "only_iron": { name: "Only Iron", price: 10, unit: "pcs" }
 };
 
-let clerkInitialized = false;
-
-async function initClerk() {
-    try {
-        const res = await fetch(`${API_BASE.replace('/api', '')}/api/auth/config`);
-        if (!res.ok) throw new Error("Failed to fetch Clerk config");
-        const { publishableKey } = await res.json();
-        
-        if (!publishableKey) {
-            console.warn("Clerk Publishable Key is not configured in .env");
-            const container = document.getElementById('clerk-auth-container');
-            if (container) {
-                container.innerHTML = `
-                    <div class="text-center p-6 bg-red-50 text-red-700 rounded-xl border border-red-100">
-                        <i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i>
-                        <p class="text-xs font-bold">Authentication Config Missing</p>
-                        <p class="text-[10px] opacity-80 mt-1">Please set CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY in your .env file.</p>
-                    </div>
-                `;
-            }
-            return;
-        }
-        
-        const script = document.createElement('script');
-        script.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
-        script.async = true;
-        script.crossOrigin = "anonymous";
-        
-        const loadPromise = new Promise((resolve) => {
-            script.onload = async () => {
-                try {
-                    await window.Clerk.load({ publishableKey });
-                    clerkInitialized = true;
-                    
-                    // Register state listener
-                    window.Clerk.addListener(async ({ session, user }) => {
-                        if (session && user) {
-                            try {
-                                const token = await window.Clerk.session.getToken();
-                                const resMe = await fetch(`${API_BASE}/auth/me`, {
-                                    headers: { 'Authorization': `Bearer ${token}` }
-                                });
-                                if (resMe.ok) {
-                                    const data = await resMe.json();
-                                    if (data.success) {
-                                        if (!currentUser || currentUser.id !== data.user.id) {
-                                            applyLoginState(data.user, token);
-                                        }
-                                    }
-                                } else {
-                                    console.error("Failed to sync backend user from Clerk session");
-                                }
-                            } catch (err) {
-                                console.error("Clerk session sync error:", err);
-                            }
-                        } else {
-                            if (currentUser) {
-                                handleLogout(true);
-                            }
-                        }
-                    });
-                } catch (e) {
-                    console.error("Clerk loading error:", e);
-                }
-                resolve();
-            };
-        });
-        
-        document.body.appendChild(script);
-        await loadPromise;
-    } catch (err) {
-        console.error("initClerk failed:", err);
-    }
-}
-
 // INITIALIZE APP
 window.addEventListener('DOMContentLoaded', async () => {
     // 1. Initialize 3D Washer if container element exists
@@ -269,8 +183,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     // 5. Initialize Charts (Admin Pane)
     initAdminChart();
 
-    // Initialize Clerk secure authentication
-    await initClerk();
+    // Restore user session from localStorage if present
+    const storedUser = localStorage.getItem('369laundary_user');
+    if (storedUser) {
+        try {
+            currentUser = JSON.parse(storedUser);
+            applyLoginState(currentUser);
+        } catch (e) {
+            console.error("Failed to restore session from localStorage:", e);
+        }
+    }
 
     // 6. Test connection to backend and load initial data
     await checkBackendConnection();
@@ -668,9 +590,37 @@ function updateSynthSound(rpm, phase) {
 
 
 // ROLE-BASED ACCESS & AUTH CONSOLE
-async function showAuthMode(mode) {
+function showAuthMode(mode) {
     initAudio(); 
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+    // Toggle forms
+    const signinForm = document.getElementById('signin-form');
+    const signupForm = document.getElementById('signup-form');
+    const adminForm = document.getElementById('admin-login-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const resetForm = document.getElementById('reset-password-form');
+    
+    if (signinForm) signinForm.style.display = mode === 'signin' ? 'block' : 'none';
+    if (signupForm) signupForm.style.display = mode === 'signup' ? 'block' : 'none';
+    if (adminForm) adminForm.style.display = mode === 'admin' ? 'block' : 'none';
+    if (forgotForm) forgotForm.style.display = mode === 'forgot' ? 'block' : 'none';
+    if (resetForm) resetForm.style.display = mode === 'reset' ? 'block' : 'none';
+
+    // Toggle tab headers container visibility
+    const tabsContainer = document.getElementById('auth-tabs-container');
+    if (tabsContainer) {
+        tabsContainer.style.display = (mode === 'forgot' || mode === 'reset') ? 'none' : 'flex';
+    }
+
+    // Toggle tab headers active state if present
+    const tabSignin = document.getElementById('auth-tab-signin');
+    const tabSignup = document.getElementById('auth-tab-signup');
+    const tabAdmin = document.getElementById('auth-tab-admin');
+    
+    if (tabSignin) tabSignin.classList.toggle('active', mode === 'signin');
+    if (tabSignup) tabSignup.classList.toggle('active', mode === 'signup');
+    if (tabAdmin) tabAdmin.classList.toggle('active', mode === 'admin');
 
     // Switch tab to gatekeeper
     switchTab('gatekeeper');
@@ -685,28 +635,6 @@ async function showAuthMode(mode) {
     const dashCard = document.getElementById('customer-dashboard');
     if (authCard) authCard.style.display = 'block';
     if (dashCard) dashCard.style.display = 'none';
-
-    const container = document.getElementById('clerk-auth-container');
-    if (!container) return;
-
-    // Wait for Clerk to initialize
-    let attempts = 0;
-    while (!clerkInitialized && attempts < 50) {
-        await new Promise(r => setTimeout(r, 100));
-        attempts++;
-    }
-
-    if (!clerkInitialized) {
-        container.innerHTML = `<p class="text-xs text-red-500">Clerk failed to load. Please check your network connection.</p>`;
-        return;
-    }
-
-    container.innerHTML = "";
-    if (mode === 'signup') {
-        window.Clerk.mountSignUp(container);
-    } else {
-        window.Clerk.mountSignIn(container);
-    }
 }
 
 async function handleSignInSubmit(e) {
@@ -964,21 +892,12 @@ function applyLoginState(user, token) {
     }
 }
 
-function handleLogout(fromClerkListener = false) {
+function handleLogout() {
     currentUser = null;
     activeOrder = null;
     currentBasket = [];
     localStorage.removeItem('369laundary_user');
     localStorage.removeItem('369laundary_token');
-    
-    if (!fromClerkListener && window.Clerk && window.Clerk.session) {
-        try {
-            window.Clerk.signOut();
-        } catch(e) {
-            console.warn("Failed to sign out from Clerk:", e.message);
-        }
-    }
-
     renderBasket();
 
     // Reset mobile navigation bar to guest states

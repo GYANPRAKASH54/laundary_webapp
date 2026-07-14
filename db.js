@@ -204,8 +204,7 @@ const initDb = async () => {
                     phone VARCHAR(20) UNIQUE NOT NULL,
                     email VARCHAR(100) NOT NULL,
                     password VARCHAR(255) NOT NULL,
-                    role VARCHAR(20) DEFAULT 'customer',
-                    clerk_user_id VARCHAR(100) UNIQUE
+                    role VARCHAR(20) DEFAULT 'customer'
                 )
             `);
 
@@ -262,12 +261,6 @@ const initDb = async () => {
                 await dbRun("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'pending'");
             } catch(e) {
                 console.warn("payment_status column check failed:", e.message);
-            }
-
-            try {
-                await dbRun("ALTER TABLE users ADD COLUMN IF NOT EXISTS clerk_user_id VARCHAR(100) UNIQUE");
-            } catch(e) {
-                console.warn("clerk_user_id column check failed (Postgres):", e.message);
             }
 
             await dbRun(`
@@ -343,8 +336,7 @@ const initDb = async () => {
                 phone TEXT UNIQUE NOT NULL,
                 email TEXT NOT NULL,
                 password TEXT NOT NULL,
-                role TEXT DEFAULT 'customer',
-                clerk_user_id TEXT UNIQUE
+                role TEXT DEFAULT 'customer'
             )
         `);
 
@@ -393,9 +385,6 @@ const initDb = async () => {
         } catch(e) {}
         try {
             await dbRun("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT 'pending'");
-        } catch(e) {}
-        try {
-            await dbRun("ALTER TABLE users ADD COLUMN clerk_user_id TEXT UNIQUE");
         } catch(e) {}
 
         // 4. Order Items Table

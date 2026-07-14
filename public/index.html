@@ -778,13 +778,223 @@
                 <!-- Right Side: Forms Card -->
                 <div class="w-full md:w-1/2 flex items-center justify-center p-8 bg-gray-50">
                     <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-                        <!-- CLERK UNIFIED AUTH CONTAINER -->
-                        <div id="clerk-auth-container" class="w-full flex justify-center items-center py-4">
-                            <div class="text-center py-10">
-                                <i class="fa-solid fa-spinner animate-spin text-3xl text-secondary mb-3"></i>
-                                <p class="text-xs text-gray-500">Initializing Clerk Secure Authentication...</p>
-                            </div>
+                        <!-- Toggle Form Headers -->
+                        <div class="flex bg-gray-100 p-1 rounded-lg mb-6" id="auth-tabs-container">
+                            <button class="flex-grow py-2.5 rounded-md text-xs font-bold transition-all"
+                                id="auth-tab-signin" onclick="showAuthMode('signin')">
+                                SIGN IN
+                            </button>
+                            <button class="flex-grow py-2.5 rounded-md text-xs font-bold transition-all text-gray-500"
+                                id="auth-tab-signup" onclick="showAuthMode('signup')">
+                                SIGN UP
+                            </button>
+                            <button class="flex-grow py-2.5 rounded-md text-xs font-bold transition-all text-gray-500"
+                                id="auth-tab-admin" onclick="showAuthMode('admin')">
+                                STAFF
+                            </button>
                         </div>
+
+                        <!-- SIGN IN FORM -->
+                        <form id="signin-form" onsubmit="handleSignInSubmit(event)" class="space-y-4">
+                            <h3 class="text-xl font-bold text-primary mb-1">Welcome Back</h3>
+                            <p class="text-xs text-gray-500 mb-4">Sign in to manage your premium valet services.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Mobile
+                                    Number</label>
+                                <input type="tel" id="signin-phone" placeholder="e.g. 9876543210"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                                <span class="text-[9px] text-gray-400 block mt-0.5">Enter 10-digit number only (no +91
+                                    or leading 0)</span>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <label
+                                        class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                    <button type="button" onclick="showForgotPasswordForm()"
+                                        class="text-[10px] font-bold text-secondary hover:underline">Forgot
+                                        Password?</button>
+                                </div>
+                                <div class="relative">
+                                    <input type="password" id="signin-password" placeholder="••••••••"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
+                                        required>
+                                    <button type="button" onclick="togglePasswordVisibility('signin-password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Sign In
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+
+                        <!-- SIGN UP FORM -->
+                        <form id="signup-form" onsubmit="handleSignUpSubmit(event)" class="space-y-4"
+                            style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Create Account</h3>
+                            <p class="text-xs text-gray-500 mb-4">Register for premium smart fabric valet treatment.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Full
+                                    Name</label>
+                                <input type="text" id="signup-name" placeholder="John Doe"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Mobile
+                                    Number</label>
+                                <input type="tel" id="signup-phone" placeholder="e.g. 9876543210"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                                <span class="text-[9px] text-gray-400 block mt-0.5">Enter 10-digit number only (no +91
+                                    or leading 0)</span>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email
+                                    Address</label>
+                                <input type="email" id="signup-email" placeholder="name@domain.com"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                <div class="relative">
+                                    <input type="password" id="signup-password" placeholder="••••••••"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
+                                        required>
+                                    <button type="button" onclick="togglePasswordVisibility('signup-password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Register
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+
+                        <!-- ADMIN/STAFF LOGIN FORM -->
+                        <form id="admin-login-form" onsubmit="handleAdminLoginSubmit(event)" class="space-y-4"
+                            style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Staff Operations Center</h3>
+                            <p class="text-xs text-gray-500 mb-4">Enter staff keys to access order logs.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Mobile
+                                    Number</label>
+                                <input type="tel" id="admin-login-phone" placeholder="+91 90000 11111"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Password</label>
+                                <div class="relative">
+                                    <input type="password" id="admin-login-password" placeholder="••••••••"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
+                                        required>
+                                    <button type="button"
+                                        onclick="togglePasswordVisibility('admin-login-password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-secondary focus:outline-none flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-secondary hover:bg-secondary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Access Console
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </form>
+
+                        <!-- FORGOT PASSWORD FORM -->
+                        <form id="forgot-password-form" onsubmit="handleForgotPasswordSubmit(event)" class="space-y-4"
+                            style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Forgot Password</h3>
+                            <p class="text-xs text-gray-500 mb-4">Enter your registered email address, and we'll email
+                                you a password reset code.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email
+                                    Address</label>
+                                <input type="email" id="forgot-email" placeholder="name@domain.com"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Send Reset Link & Code
+                                <span class="material-symbols-outlined text-sm">mail</span>
+                            </button>
+                            <button type="button" onclick="showAuthMode('signin')"
+                                class="w-full text-center text-xs font-bold text-primary hover:underline block pt-2">
+                                Back to Sign In
+                            </button>
+                        </form>
+
+                        <!-- RESET PASSWORD FORM -->
+                        <form id="reset-password-form" onsubmit="handleResetPasswordSubmit(event)" class="space-y-4"
+                            style="display: none;">
+                            <h3 class="text-xl font-bold text-primary mb-1">Reset Password</h3>
+                            <p class="text-xs text-gray-500 mb-4">Set a secure new password for your account.</p>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email
+                                    Address</label>
+                                <input type="email" id="reset-email" placeholder="name@domain.com"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">6-Digit
+                                    Reset Code</label>
+                                <input type="text" id="reset-token" placeholder="e.g. 123456"
+                                    class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 px-3 text-sm font-medium"
+                                    required>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">New
+                                    Password</label>
+                                <div class="relative">
+                                    <input type="password" id="reset-new-password" placeholder="••••••••"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
+                                        required>
+                                    <button type="button" onclick="togglePasswordVisibility('reset-new-password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label
+                                    class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Confirm
+                                    Password</label>
+                                <div class="relative">
+                                    <input type="password" id="reset-confirm-password" placeholder="••••••••"
+                                        class="w-full border-gray-200 focus:ring-primary rounded-lg py-2 pl-3 pr-10 text-sm font-medium"
+                                        required>
+                                    <button type="button"
+                                        onclick="togglePasswordVisibility('reset-confirm-password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-secondary hover:bg-secondary-container text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4">
+                                Save New Password
+                                <span class="material-symbols-outlined text-sm">lock_reset</span>
+                            </button>
+                            <button type="button" onclick="showAuthMode('signin')"
+                                class="w-full text-center text-xs font-bold text-primary hover:underline block pt-2">
+                                Cancel
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
